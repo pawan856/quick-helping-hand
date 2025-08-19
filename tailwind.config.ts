@@ -18,6 +18,38 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: [
+					'"Source Sans Pro"',
+					'"Inter"',
+					'"ui-sans-serif"',
+					'"system-ui"',
+					'"-apple-system"',
+					'"BlinkMacSystemFont"',
+					'"Segoe UI"',
+					'"Roboto"',
+					'"Helvetica Neue"',
+					'"Arial"',
+					'"Noto Sans"',
+					'"sans-serif"'
+				],
+				heading: [
+					'"Inter"',
+					'"Poppins"',
+					'"ui-sans-serif"',
+					'"system-ui"',
+					'"-apple-system"',
+					'"BlinkMacSystemFont"',
+					'"Segoe UI"',
+					'"sans-serif"'
+				],
+				medical: [
+					'"Source Sans Pro"',
+					'"Inter"',
+					'"system-ui"',
+					'"sans-serif"'
+				]
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -27,7 +59,8 @@ export default {
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))',
-					soft: 'hsl(var(--primary-soft))'
+					soft: 'hsl(var(--primary-soft))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -81,7 +114,14 @@ export default {
 				},
 				gold: {
 					DEFAULT: 'hsl(var(--gold))',
-					soft: 'hsl(var(--gold-soft))'
+					soft: 'hsl(var(--gold-soft))',
+					glow: 'hsl(var(--gold-glow))'
+				},
+				// Vital signs colors
+				vital: {
+					normal: 'hsl(var(--vital-normal))',
+					warning: 'hsl(var(--vital-warning))',
+					critical: 'hsl(var(--vital-critical))'
 				}
 			},
 			borderRadius: {
@@ -136,7 +176,15 @@ export default {
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
 				'medium': 'var(--shadow-medium)',
-				'strong': 'var(--shadow-strong)'
+				'strong': 'var(--shadow-strong)',
+				'glow': 'var(--shadow-glow)',
+				'gold': 'var(--shadow-gold)'
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-gold': 'var(--gradient-gold)',
+				'gradient-soft': 'var(--gradient-soft)',
+				'gradient-medical': 'var(--gradient-medical)'
 			}
 		}
 	},

@@ -2,6 +2,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PatientTrendChart } from "@/components/charts/PatientTrendChart";
+import { AppointmentHeatmap } from "@/components/charts/AppointmentHeatmap";
+import { VitalSignsGauge } from "@/components/charts/VitalSignsGauge";
+import { SmartSearch } from "@/components/premium/SmartSearch";
 import { 
   Users, 
   Calendar, 
@@ -10,7 +14,8 @@ import {
   TrendingUp,
   Clock,
   Heart,
-  AlertCircle
+  AlertCircle,
+  Search
 } from "lucide-react";
 
 const Index = () => {
@@ -91,10 +96,24 @@ const Index = () => {
         </div>
 
         {/* Rest of dashboard content */}
+        {/* Premium Smart Search */}
+        <div className="flex justify-center">
+          <SmartSearch className="w-full max-w-4xl" />
+        </div>
+
+        {/* Enhanced Dashboard with Premium Charts */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <PatientTrendChart />
+          <AppointmentHeatmap />
+        </div>
+
+        {/* Real-time Vital Signs */}
+        <VitalSignsGauge />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 hover-lift">
+          <Card className="lg:col-span-2 hover-lift glass-premium">
             <CardHeader>
-              <CardTitle className="flex items-center">
+              <CardTitle className="flex items-center font-heading">
                 <Calendar className="mr-2 h-5 w-5" />
                 Today's Appointments
               </CardTitle>
@@ -102,7 +121,7 @@ const Index = () => {
             <CardContent>
               <div className="space-y-4">
                 {recentAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-all duration-300 hover-lift">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
@@ -113,12 +132,12 @@ const Index = () => {
                         <p className="text-sm text-muted-foreground">{appointment.type}</p>
                       </div>
                     </div>
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                       appointment.status === 'completed' 
-                        ? 'bg-success/10 text-success' 
+                        ? 'status-stable' 
                         : appointment.status === 'in-progress'
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-warning/10 text-warning'
+                        ? 'bg-primary/10 text-primary border border-primary/20'
+                        : 'status-warning'
                     }`}>
                       {appointment.status}
                     </div>
