@@ -16,51 +16,51 @@ const Appointments = () => {
   const appointments = [
     {
       id: 1,
-      patient: "John Smith",
+      patient: "Rajesh Sharma",
       time: "09:00 AM",
       date: "2024-01-15",
       type: "Consultation",
-      doctor: "Dr. Johnson",
+      doctor: "Dr. Kapoor",
       status: "scheduled",
       duration: "30 min"
     },
     {
       id: 2,
-      patient: "Sarah Johnson",
+      patient: "Priya Patel",
       time: "10:30 AM",
       date: "2024-01-15",
       type: "Follow-up",
-      doctor: "Dr. Smith",
+      doctor: "Dr. Agarwal",
       status: "in-progress",
       duration: "45 min"
     },
     {
       id: 3,
-      patient: "Mike Brown",
+      patient: "Arjun Singh",
       time: "11:15 AM",
       date: "2024-01-15",
       type: "Check-up",
-      doctor: "Dr. Johnson",
+      doctor: "Dr. Kapoor",
       status: "completed",
       duration: "20 min"
     },
     {
       id: 4,
-      patient: "Emma Davis",
+      patient: "Kavya Reddy",
       time: "02:00 PM",
       date: "2024-01-15",
       type: "Consultation",
-      doctor: "Dr. Wilson",
+      doctor: "Dr. Mehta",
       status: "scheduled",
       duration: "60 min"
     },
     {
       id: 5,
-      patient: "James Wilson",
+      patient: "Vikram Gupta",
       time: "03:30 PM",
       date: "2024-01-15",
       type: "Surgery",
-      doctor: "Dr. Brown",
+      doctor: "Dr. Joshi",
       status: "scheduled",
       duration: "120 min"
     }

@@ -22,40 +22,40 @@ const MedicalRecords = () => {
   const records = [
     {
       id: 1,
-      patient: "John Smith",
+      patient: "Rajesh Sharma",
       date: "2024-01-15",
       type: "Consultation",
-      doctor: "Dr. Johnson",
+      doctor: "Dr. Kapoor",
       diagnosis: "Hypertension",
       status: "completed",
       category: "cardiology"
     },
     {
       id: 2,
-      patient: "Sarah Johnson",
+      patient: "Priya Patel",
       date: "2024-01-12",
       type: "Lab Results",
-      doctor: "Dr. Smith",
+      doctor: "Dr. Agarwal",
       diagnosis: "Blood Sugar Test",
       status: "reviewed",
       category: "laboratory"
     },
     {
       id: 3,
-      patient: "Mike Brown",
+      patient: "Arjun Singh",
       date: "2024-01-10",
       type: "Prescription",
-      doctor: "Dr. Wilson",
+      doctor: "Dr. Mehta",
       diagnosis: "Asthma Medication",
       status: "active",
       category: "pharmacy"
     },
     {
       id: 4,
-      patient: "Emma Davis",
+      patient: "Kavya Reddy",
       date: "2024-01-08",
       type: "X-Ray",
-      doctor: "Dr. Brown",
+      doctor: "Dr. Joshi",
       diagnosis: "Knee Joint",
       status: "completed",
       category: "radiology"

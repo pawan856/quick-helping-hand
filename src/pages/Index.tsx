@@ -51,14 +51,14 @@ const Index = () => {
   ];
 
   const recentAppointments = [
-    { id: 1, patient: "John Smith", time: "09:00 AM", type: "Consultation", status: "completed" },
-    { id: 2, patient: "Sarah Johnson", time: "10:30 AM", type: "Follow-up", status: "in-progress" },
-    { id: 3, patient: "Mike Brown", time: "11:15 AM", type: "Check-up", status: "upcoming" },
-    { id: 4, patient: "Emma Davis", time: "02:00 PM", type: "Consultation", status: "upcoming" },
+    { id: 1, patient: "Rajesh Sharma", time: "09:00 AM", type: "Consultation", status: "completed" },
+    { id: 2, patient: "Priya Patel", time: "10:30 AM", type: "Follow-up", status: "in-progress" },
+    { id: 3, patient: "Arjun Singh", time: "11:15 AM", type: "Check-up", status: "upcoming" },
+    { id: 4, patient: "Kavya Reddy", time: "02:00 PM", type: "Consultation", status: "upcoming" },
   ];
 
   const alerts = [
-    { id: 1, message: "Patient John Smith requires follow-up", priority: "high" },
+    { id: 1, message: "Patient Rajesh Sharma requires follow-up", priority: "high" },
     { id: 2, message: "Lab results ready for review", priority: "medium" },
     { id: 3, message: "Equipment maintenance scheduled", priority: "low" },
   ];
@@ -69,7 +69,7 @@ const Index = () => {
         {/* Welcome Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-foreground">Good morning, Dr. Wilson</h1>
+            <h1 className="text-3xl font-bold text-foreground">Good morning, Dr. Mehta</h1>
             <p className="text-muted-foreground">
               You have 24 appointments today and 5 critical alerts requiring attention.
             </p>
