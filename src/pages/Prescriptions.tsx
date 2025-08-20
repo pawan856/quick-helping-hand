@@ -62,9 +62,9 @@ const prescriptionColumns = [
   {
     key: "patientName",
     header: "Patient",
-    cell: (_value, row: any) => (
+    cell: (value, row: any) => (
       <div>
-        <p className="font-medium">{row.patientName}</p>
+        <p className="font-medium">{typeof value === 'object' ? JSON.stringify(value) : String(value ?? "")}</p>
         <p className="text-xs text-muted-foreground">{row.patientId}</p>
       </div>
     )
@@ -77,16 +77,18 @@ const prescriptionColumns = [
     key: "medications",
     header: "Medications",
     cell: (value: any[]) => (
-      <div className="space-y-1">
-        {value.slice(0, 2).map((med: any, index: number) => (
-          <p key={index} className="text-sm">
-            {med.name} - {med.dosage}
-          </p>
-        ))}
-        {value.length > 2 && (
-          <p className="text-xs text-muted-foreground">+{value.length - 2} more</p>
-        )}
-      </div>
+      Array.isArray(value) ? (
+        <div className="space-y-1">
+          {value.slice(0, 2).map((med: any, index: number) => (
+            <p key={index} className="text-sm">
+              {med.name} - {med.dosage}
+            </p>
+          ))}
+          {value.length > 2 && (
+            <p className="text-xs text-muted-foreground">+{value.length - 2} more</p>
+          )}
+        </div>
+      ) : String(value ?? "")
     )
   },
   {

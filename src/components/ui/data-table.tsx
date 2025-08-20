@@ -96,11 +96,6 @@ export function DataTable<T extends Record<string, any>>({
       const cellValue = column.cell(value, row);
       if (typeof cellValue === 'object' && !Array.isArray(cellValue) && cellValue !== null && !('$$typeof' in cellValue)) {
         // Not JSX, not null, not array: likely a raw object
-        console.warn('Warning: DataTable cell renderer returned a raw object. This will cause React error #31.', {
-          column,
-          row,
-          cellValue
-        });
         return JSON.stringify(cellValue);
       }
       return cellValue;
