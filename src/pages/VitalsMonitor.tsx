@@ -51,29 +51,29 @@ const vitalColumns = [
   {
     key: "heartRate" as keyof typeof vitalHistoryData[0],
     header: "Heart Rate",
-    cell: (value: any) => `${value} bpm`
+    cell: (row: typeof vitalHistoryData[0]) => `${row.heartRate} bpm`
   },
   {
     key: "bloodPressure" as keyof typeof vitalHistoryData[0],
     header: "Blood Pressure",
-    cell: (value: any) => `${value} mmHg`
+    cell: (row: typeof vitalHistoryData[0]) => `${row.bloodPressure} mmHg`
   },
   {
     key: "temperature" as keyof typeof vitalHistoryData[0],
     header: "Temperature", 
-    cell: (value: any) => `${value}°F`
+    cell: (row: typeof vitalHistoryData[0]) => `${row.temperature}°F`
   },
   {
     key: "oxygenSaturation" as keyof typeof vitalHistoryData[0],
     header: "SpO₂",
-    cell: (value: any) => `${value}%`
+    cell: (row: typeof vitalHistoryData[0]) => `${row.oxygenSaturation}%`
   },
   {
     key: "status" as keyof typeof vitalHistoryData[0],
     header: "Status",
-    cell: (value: any) => (
-      <Badge variant={value === "Normal" ? "secondary" : value === "Critical" ? "destructive" : "default"}>
-        {value}
+    cell: (row: typeof vitalHistoryData[0]) => (
+      <Badge variant={row.status === "Normal" ? "secondary" : row.status === "Critical" ? "destructive" : "default"}>
+        {row.status}
       </Badge>
     )
   },
