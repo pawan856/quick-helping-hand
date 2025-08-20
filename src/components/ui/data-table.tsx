@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 export interface DataTableColumn<T> {
   key: keyof T;
   header: string;
-  cell?: (item: T) => ReactNode;
+  cell?: (value: any, row: T) => ReactNode;
   sortable?: boolean;
   width?: string;
 }
@@ -90,33 +90,23 @@ export function DataTable<T extends Record<string, any>>({
     }));
   };
 
-  const renderCell = (item: T, column: DataTableColumn<T>) => {
+  const renderCell = (row: T, column: DataTableColumn<T>) => {
+    const value = row[column.key];
     if (column.cell) {
-      const cellValue = column.cell(item);
+      const cellValue = column.cell(value, row);
       if (typeof cellValue === 'object' && !Array.isArray(cellValue) && cellValue !== null && !('$$typeof' in cellValue)) {
         // Not JSX, not null, not array: likely a raw object
         console.warn('Warning: DataTable cell renderer returned a raw object. This will cause React error #31.', {
           column,
-          item,
+          row,
           cellValue
         });
         return JSON.stringify(cellValue);
       }
       return cellValue;
     }
-    const value = item[column.key];
-    // Handle different value types
-    if (typeof value === 'boolean') {
-      return (
-        <Badge variant={value ? "default" : "secondary"}>
-          {value ? "Yes" : "No"}
-        </Badge>
-      );
-    }
-    if (value && Object.prototype.toString.call(value) === '[object Date]') {
-      return (value as Date).toLocaleDateString();
-    }
-    return String(value);
+    // Default rendering: always string
+    return String(value ?? "");
   };
 
   return (

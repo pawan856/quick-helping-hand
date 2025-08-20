@@ -96,12 +96,12 @@ const labColumns = [
     key: "orderDate" as keyof typeof labResultsData[0],
     header: "Order Date",
     sortable: true,
-    cell: (row: any) => row.orderDate?.toString()
+    cell: (value) => value?.toString()
   },
   {
     key: "status" as keyof typeof labResultsData[0],
     header: "Status",
-    cell: (value: any) => {
+    cell: (value) => {
       const variants = {
         Completed: "secondary",
         Critical: "destructive", 
@@ -124,7 +124,7 @@ const labColumns = [
   {
     key: "priority" as keyof typeof labResultsData[0],
     header: "Priority",
-    cell: (value: any) => (
+    cell: (value) => (
       <Badge 
         variant={value === "Stat" ? "destructive" : value === "Urgent" ? "default" : "outline"}
         className={value === "Stat" ? "animate-pulse" : ""}
@@ -140,7 +140,7 @@ const labColumns = [
   {
     key: "actions" as keyof typeof labResultsData[0],
     header: "Actions",
-    cell: (row: any) => (
+    cell: (_value, row: any) => (
       <div className="flex items-center gap-2">
         <Dialog>
           <DialogTrigger asChild>
@@ -165,7 +165,9 @@ const labColumns = [
               </div>
               <div className="bg-muted/50 p-4 rounded-lg">
                 <h4 className="font-medium mb-2">Results:</h4>
-                <p className="text-sm">{typeof row.result === "string" ? row.result : "Results pending..."}</p>
+                <p className="text-sm">
+                  {typeof row.result === "object" && row.result !== null ? `${row.result.value} ${row.result.unit}` : (row.result ?? "Results pending...")}
+                </p>
               </div>
             </div>
           </DialogContent>

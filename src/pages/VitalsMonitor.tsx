@@ -51,29 +51,29 @@ const vitalColumns = [
   {
     key: "heartRate" as keyof typeof vitalHistoryData[0],
     header: "Heart Rate",
-    cell: (row: typeof vitalHistoryData[0]) => `${row.heartRate} bpm`
+    cell: (value) => `${value} bpm`
   },
   {
     key: "bloodPressure" as keyof typeof vitalHistoryData[0],
     header: "Blood Pressure",
-    cell: (row: typeof vitalHistoryData[0]) => `${row.bloodPressure} mmHg`
+    cell: (value) => `${value} mmHg`
   },
   {
     key: "temperature" as keyof typeof vitalHistoryData[0],
     header: "Temperature", 
-    cell: (row: typeof vitalHistoryData[0]) => `${row.temperature}°F`
+    cell: (value) => `${value}°F`
   },
   {
     key: "oxygenSaturation" as keyof typeof vitalHistoryData[0],
     header: "SpO₂",
-    cell: (row: typeof vitalHistoryData[0]) => `${row.oxygenSaturation}%`
+    cell: (value) => `${value}%`
   },
   {
     key: "status" as keyof typeof vitalHistoryData[0],
     header: "Status",
-    cell: (row: typeof vitalHistoryData[0]) => (
-      <Badge variant={row.status === "Normal" ? "secondary" : row.status === "Critical" ? "destructive" : "default"}>
-        {row.status}
+    cell: (value) => (
+      <Badge variant={value === "Normal" ? "secondary" : value === "Critical" ? "destructive" : "default"}>
+        {value}
       </Badge>
     )
   },
@@ -211,24 +211,31 @@ export default function VitalsMonitor() {
             { icon: Activity, label: "Blood Pressure", range: "<120/80 mmHg", status: "Normal" },
             { icon: Thermometer, label: "Temperature", range: "97-99°F", status: "Normal" },
             { icon: Droplets, label: "SpO₂", range: ">95%", status: "Normal" }
-          ].map((threshold, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-200">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <threshold.icon className="h-5 w-5 text-primary" />
+          ].map((threshold, index) => {
+            const Icon = threshold.icon;
+            if (!Icon) {
+              console.warn(`Threshold icon for ${threshold.label} is undefined!`);
+              return null;
+            }
+            return (
+              <Card key={index} className="hover:shadow-lg transition-all duration-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{threshold.label}</p>
+                      <p className="text-xs text-muted-foreground">{threshold.range}</p>
+                    </div>
+                    <Badge variant="secondary" className="bg-success/10 text-success">
+                      {threshold.status}
+                    </Badge>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{threshold.label}</p>
-                    <p className="text-xs text-muted-foreground">{threshold.range}</p>
-                  </div>
-                  <Badge variant="secondary" className="bg-success/10 text-success">
-                    {threshold.status}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </motion.div>
       </div>
     </AppLayout>
