@@ -106,18 +106,15 @@ const labColumns = [
         Critical: "destructive", 
         Pending: "default"
       } as const;
-      
       const icons = {
         Completed: CheckCircle,
         Critical: AlertTriangle,
         Pending: Clock
       };
-      
       const Icon = icons[value as keyof typeof icons];
-      
       return (
         <Badge variant={variants[value as keyof typeof variants] || "default"} className="flex items-center gap-1">
-          <Icon className="h-3 w-3" />
+          {Icon ? <Icon className="h-3 w-3" /> : null}
           {value}
         </Badge>
       );
@@ -167,7 +164,7 @@ const labColumns = [
               </div>
               <div className="bg-muted/50 p-4 rounded-lg">
                 <h4 className="font-medium mb-2">Results:</h4>
-                <p className="text-sm">{row.result || "Results pending..."}</p>
+                <p className="text-sm">{typeof row.result === "string" ? row.result : "Results pending..."}</p>
               </div>
             </div>
           </DialogContent>
