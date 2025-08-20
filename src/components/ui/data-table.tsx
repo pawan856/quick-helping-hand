@@ -91,10 +91,20 @@ export function DataTable<T extends Record<string, any>>({
   };
 
   const renderCell = (item: T, column: DataTableColumn<T>) => {
-    if (column.cell) return column.cell(item);
-    
+    if (column.cell) {
+      const cellValue = column.cell(item);
+      if (typeof cellValue === 'object' && !Array.isArray(cellValue) && cellValue !== null && !('$$typeof' in cellValue)) {
+        // Not JSX, not null, not array: likely a raw object
+        console.warn('Warning: DataTable cell renderer returned a raw object. This will cause React error #31.', {
+          column,
+          item,
+          cellValue
+        });
+        return JSON.stringify(cellValue);
+      }
+      return cellValue;
+    }
     const value = item[column.key];
-    
     // Handle different value types
     if (typeof value === 'boolean') {
       return (
@@ -103,11 +113,9 @@ export function DataTable<T extends Record<string, any>>({
         </Badge>
       );
     }
-    
     if (value && Object.prototype.toString.call(value) === '[object Date]') {
       return (value as Date).toLocaleDateString();
     }
-    
     return String(value);
   };
 
