@@ -112,8 +112,8 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               <Heart className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-sidebar-foreground">HealthCare</h1>
-              <p className="text-xs text-sidebar-foreground/60">Management System</p>
+              <h1 className="font-bold text-lg text-sidebar-foreground">HealthCare Pro</h1>
+              <p className="text-xs text-sidebar-foreground/60">Enterprise System</p>
             </div>
           </div>
         )}
@@ -157,7 +157,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               <span className="text-xs font-medium text-primary-foreground">DR</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">Dr. Sarah Wilson</p>
+              <p className="text-sm font-medium text-sidebar-foreground truncate">Dr. Priya Patel</p>
               <p className="text-xs text-sidebar-foreground/60 truncate">Chief Medical Officer</p>
             </div>
             <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
