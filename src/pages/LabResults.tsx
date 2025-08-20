@@ -95,7 +95,8 @@ const labColumns = [
   {
     key: "orderDate" as keyof typeof labResultsData[0],
     header: "Order Date",
-    sortable: true
+    sortable: true,
+    cell: (row: any) => row.orderDate?.toString()
   },
   {
     key: "status" as keyof typeof labResultsData[0],
