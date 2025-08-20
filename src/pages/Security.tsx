@@ -141,12 +141,12 @@ const sessionColumns = [
   {
     key: "device" as keyof typeof activeSessionsData[0],
     header: "Device",
-    cell: (row: any) => (
+    cell: (_value: any, row: any) => (
       <div className="flex items-center gap-2">
         <Monitor className="h-4 w-4 text-muted-foreground" />
         <div>
-          <p className="font-medium">{row.device}</p>
-          {row.current && <Badge variant="secondary" className="text-xs">Current Session</Badge>}
+          <p className="font-medium">{typeof row.device === 'object' ? JSON.stringify(row.device) : String(row.device ?? "")}</p>
+          {Boolean(row.current) && <Badge variant="secondary" className="text-xs">Current Session</Badge>}
         </div>
       </div>
     )
@@ -154,31 +154,31 @@ const sessionColumns = [
   {
     key: "location" as keyof typeof activeSessionsData[0],
     header: "Location",
-    cell: (row: any) => (
+    cell: (_value: any, row: any) => (
       <div>
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground" />
-          {row.location}
+          {typeof row.location === 'object' ? JSON.stringify(row.location) : String(row.location ?? "")}
         </div>
-        <p className="text-xs text-muted-foreground">{row.ipAddress}</p>
+        <p className="text-xs text-muted-foreground">{typeof row.ipAddress === 'object' ? JSON.stringify(row.ipAddress) : String(row.ipAddress ?? "")}</p>
       </div>
     )
   },
   {
     key: "lastActive" as keyof typeof activeSessionsData[0],
     header: "Last Active",
-    cell: (row: any) => (
+    cell: (_value: any, row: any) => (
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 text-muted-foreground" />
-        {row.lastActive}
+        {typeof row.lastActive === 'object' ? JSON.stringify(row.lastActive) : String(row.lastActive ?? "")}
       </div>
     )
   },
   {
     key: "actions" as keyof typeof activeSessionsData[0],
     header: "Actions",
-    cell: (row: any) => (
-      row.current ? (
+    cell: (_value: any, row: any) => (
+      Boolean(row.current) ? (
         <Badge variant="outline">Current</Badge>
       ) : (
         <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
