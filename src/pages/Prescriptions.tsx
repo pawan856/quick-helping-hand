@@ -62,7 +62,7 @@ const prescriptionColumns = [
   {
     key: "patientName",
     header: "Patient",
-    cell: (row: any) => (
+    cell: (_value, row: any) => (
       <div>
         <p className="font-medium">{row.patientName}</p>
         <p className="text-xs text-muted-foreground">{row.patientId}</p>
@@ -76,15 +76,15 @@ const prescriptionColumns = [
   {
     key: "medications",
     header: "Medications",
-    cell: (row: any) => (
+    cell: (value: any[]) => (
       <div className="space-y-1">
-        {row.medications.slice(0, 2).map((med: any, index: number) => (
+        {value.slice(0, 2).map((med: any, index: number) => (
           <p key={index} className="text-sm">
             {med.name} - {med.dosage}
           </p>
         ))}
-        {row.medications.length > 2 && (
-          <p className="text-xs text-muted-foreground">+{row.medications.length - 2} more</p>
+        {value.length > 2 && (
+          <p className="text-xs text-muted-foreground">+{value.length - 2} more</p>
         )}
       </div>
     )
@@ -97,16 +97,16 @@ const prescriptionColumns = [
   {
     key: "status",
     header: "Status",
-    cell: (row: any) => (
-      <Badge variant={row.status === "Active" ? "secondary" : "outline"}>
-        {row.status}
+    cell: (value: string) => (
+      <Badge variant={value === "Active" ? "secondary" : "outline"}>
+        {value}
       </Badge>
     )
   },
   {
     key: "actions",
     header: "Actions",
-    cell: (row: any) => (
+    cell: (_value, row: any) => (
       <div className="flex items-center gap-2">
         <Dialog>
           <DialogTrigger asChild>
