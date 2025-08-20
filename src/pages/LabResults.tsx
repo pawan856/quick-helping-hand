@@ -85,10 +85,10 @@ const labColumns = [
   {
     key: "patientName" as keyof typeof labResultsData[0],
     header: "Patient",
-    cell: (item: any) => (
+    cell: (row: any) => (
       <div>
-        <p className="font-medium">{item.patientName}</p>
-        <p className="text-xs text-muted-foreground">{item.patientId}</p>
+        <p className="font-medium">{row.patientName}</p>
+        <p className="text-xs text-muted-foreground">{row.patientId}</p>
       </div>
     )
   },
@@ -142,7 +142,7 @@ const labColumns = [
   {
     key: "actions" as keyof typeof labResultsData[0],
     header: "Actions",
-    cell: (item: any) => (
+    cell: (row: any) => (
       <div className="flex items-center gap-2">
         <Dialog>
           <DialogTrigger asChild>
@@ -328,7 +328,6 @@ export default function LabResults() {
               <DataTable
                 data={filteredData}
                 columns={labColumns}
-                searchKey="testName"
                 searchPlaceholder="Search lab results..."
               />
             </CardContent>

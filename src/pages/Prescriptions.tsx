@@ -1,3 +1,33 @@
+import { motion } from "framer-motion";
+
+// Mock data for prescriptions
+const prescriptionsData = [
+  {
+    prescriptionId: "RX001",
+    patientName: "John Doe",
+    patientId: "P001",
+    doctorName: "Dr. Smith",
+    medications: [
+      { name: "Aspirin", dosage: "100mg", frequency: "Once daily", duration: "7 days" },
+      { name: "Paracetamol", dosage: "500mg", frequency: "Twice daily", duration: "5 days" }
+    ],
+    prescribedDate: "2025-08-15",
+    status: "Active",
+    notes: "Take after meals."
+  },
+  {
+    prescriptionId: "RX002",
+    patientName: "Jane Smith",
+    patientId: "P002",
+    doctorName: "Dr. Adams",
+    medications: [
+      { name: "Ibuprofen", dosage: "200mg", frequency: "Once daily", duration: "10 days" }
+    ],
+    prescribedDate: "2025-08-10",
+    status: "Completed",
+    notes: "Drink plenty of water."
+  }
+];
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,106 +52,61 @@ import {
   User,
   Clock
 } from "lucide-react";
-import { motion } from "framer-motion";
-
-const prescriptionsData = [
-  {
-    id: "1",
-    prescriptionId: "RX-2024-001",
-    patientName: "Arjun Singh",
-    patientId: "P-2024-001",
-    doctorName: "Dr. Priya Patel",
-    medications: [
-      { name: "Amoxicillin", dosage: "500mg", frequency: "3 times daily", duration: "7 days" },
-      { name: "Paracetamol", dosage: "650mg", frequency: "As needed", duration: "5 days" }
-    ],
-    prescribedDate: "2024-01-20",
-    status: "Active",
-    notes: "Take with food. Complete the full course of antibiotics."
-  },
-  {
-    id: "2",
-    prescriptionId: "RX-2024-002",
-    patientName: "Kavya Reddy",
-    patientId: "P-2024-002",
-    doctorName: "Dr. Rajesh Kumar",
-    medications: [
-      { name: "Atorvastatin", dosage: "20mg", frequency: "Once daily", duration: "30 days" },
-      { name: "Aspirin", dosage: "75mg", frequency: "Once daily", duration: "30 days" }
-    ],
-    prescribedDate: "2024-01-19",
-    status: "Active",
-    notes: "Monitor liver function. Take in the evening."
-  },
-  {
-    id: "3",
-    prescriptionId: "RX-2024-003",
-    patientName: "Vikram Gupta",
-    patientId: "P-2024-003",
-    doctorName: "Dr. Sunita Sharma",
-    medications: [
-      { name: "Levothyroxine", dosage: "100mcg", frequency: "Once daily", duration: "90 days" }
-    ],
-    prescribedDate: "2024-01-18",
-    status: "Completed",
-    notes: "Take on empty stomach, 30 minutes before breakfast."
-  }
-];
 
 const prescriptionColumns = [
   {
-    key: "prescriptionId" as keyof typeof prescriptionsData[0],
+    key: "prescriptionId",
     header: "Prescription ID",
     sortable: true
   },
   {
-    key: "patientName" as keyof typeof prescriptionsData[0],
+    key: "patientName",
     header: "Patient",
-    cell: (value: any, row: any) => (
+    cell: (row: any) => (
       <div>
-        <p className="font-medium">{value}</p>
+        <p className="font-medium">{row.patientName}</p>
         <p className="text-xs text-muted-foreground">{row.patientId}</p>
       </div>
     )
   },
   {
-    key: "doctorName" as keyof typeof prescriptionsData[0],
+    key: "doctorName",
     header: "Prescribed By"
   },
   {
-    key: "medications" as keyof typeof prescriptionsData[0],
+    key: "medications",
     header: "Medications",
-    cell: (value: any) => (
+    cell: (row: any) => (
       <div className="space-y-1">
-        {value.slice(0, 2).map((med: any, index: number) => (
+        {row.medications.slice(0, 2).map((med: any, index: number) => (
           <p key={index} className="text-sm">
             {med.name} - {med.dosage}
           </p>
         ))}
-        {value.length > 2 && (
-          <p className="text-xs text-muted-foreground">+{value.length - 2} more</p>
+        {row.medications.length > 2 && (
+          <p className="text-xs text-muted-foreground">+{row.medications.length - 2} more</p>
         )}
       </div>
     )
   },
   {
-    key: "prescribedDate" as keyof typeof prescriptionsData[0],
+    key: "prescribedDate",
     header: "Date",
     sortable: true
   },
   {
-    key: "status" as keyof typeof prescriptionsData[0],
+    key: "status",
     header: "Status",
-    cell: (value: any) => (
-      <Badge variant={value === "Active" ? "secondary" : "outline"}>
-        {value}
+    cell: (row: any) => (
+      <Badge variant={row.status === "Active" ? "secondary" : "outline"}>
+        {row.status}
       </Badge>
     )
   },
   {
-    key: "actions" as keyof typeof prescriptionsData[0],
+    key: "actions",
     header: "Actions",
-    cell: (value: any, row: any) => (
+    cell: (row: any) => (
       <div className="flex items-center gap-2">
         <Dialog>
           <DialogTrigger asChild>
@@ -147,7 +132,6 @@ const prescriptionColumns = [
                   </div>
                 </div>
               </div>
-              
               {/* Patient Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -162,7 +146,6 @@ const prescriptionColumns = [
                   </Badge>
                 </div>
               </div>
-              
               {/* Medications */}
               <div>
                 <h4 className="font-medium mb-3">Prescribed Medications</h4>
@@ -191,7 +174,6 @@ const prescriptionColumns = [
                   ))}
                 </div>
               </div>
-              
               {/* Notes */}
               {row.notes && (
                 <div>
@@ -202,12 +184,6 @@ const prescriptionColumns = [
             </div>
           </DialogContent>
         </Dialog>
-        <Button variant="ghost" size="sm">
-          <Download className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="sm">
-          <Printer className="h-4 w-4" />
-        </Button>
       </div>
     )
   }
@@ -224,124 +200,7 @@ export default function Prescriptions() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Prescriptions</h1>
-            <p className="text-muted-foreground mt-1">Manage digital prescriptions and medication orders</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Prescription
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Prescription</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-6">
-                  {/* Patient Selection */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="patient">Patient</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select patient" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="arjun">Arjun Singh (P-2024-001)</SelectItem>
-                          <SelectItem value="kavya">Kavya Reddy (P-2024-002)</SelectItem>
-                          <SelectItem value="vikram">Vikram Gupta (P-2024-003)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="doctor">Prescribing Doctor</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select doctor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="priya">Dr. Priya Patel</SelectItem>
-                          <SelectItem value="rajesh">Dr. Rajesh Kumar</SelectItem>
-                          <SelectItem value="sunita">Dr. Sunita Sharma</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
 
-                  {/* Medications */}
-                  <div className="space-y-4">
-                    <Label>Medications</Label>
-                    <div className="border rounded-lg p-4 space-y-4">
-                      <div className="grid grid-cols-4 gap-4">
-                        <div className="space-y-2">
-                          <Label>Medication Name</Label>
-                          <Input placeholder="e.g., Amoxicillin" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Dosage</Label>
-                          <Input placeholder="e.g., 500mg" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Frequency</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select frequency" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="once">Once daily</SelectItem>
-                              <SelectItem value="twice">Twice daily</SelectItem>
-                              <SelectItem value="thrice">3 times daily</SelectItem>
-                              <SelectItem value="asneeded">As needed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Duration</Label>
-                          <Input placeholder="e.g., 7 days" />
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Another Medication
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Notes & Instructions</Label>
-                    <Textarea 
-                      id="notes"
-                      placeholder="Additional notes, instructions, or precautions..."
-                      rows={4}
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={() => setIsCreateModalOpen(false)}>
-                      Create Prescription
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </motion.div>
 
         {/* Stats Cards */}
         <motion.div
@@ -431,7 +290,6 @@ export default function Prescriptions() {
                   <DataTable
                     data={prescriptionsData}
                     columns={prescriptionColumns}
-                    searchKey="patientName"
                     searchPlaceholder="Search prescriptions..."
                   />
                 </TabsContent>
@@ -439,7 +297,6 @@ export default function Prescriptions() {
                   <DataTable
                     data={prescriptionsData.filter(p => p.status === "Active")}
                     columns={prescriptionColumns}
-                    searchKey="patientName"
                     searchPlaceholder="Search active prescriptions..."
                   />
                 </TabsContent>
@@ -447,7 +304,6 @@ export default function Prescriptions() {
                   <DataTable
                     data={prescriptionsData.filter(p => p.status === "Completed")}
                     columns={prescriptionColumns}
-                    searchKey="patientName"
                     searchPlaceholder="Search completed prescriptions..."
                   />
                 </TabsContent>

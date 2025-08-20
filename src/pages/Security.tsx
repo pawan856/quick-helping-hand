@@ -141,11 +141,11 @@ const sessionColumns = [
   {
     key: "device" as keyof typeof activeSessionsData[0],
     header: "Device",
-    cell: (value: any, row: any) => (
+    cell: (row: any) => (
       <div className="flex items-center gap-2">
         <Monitor className="h-4 w-4 text-muted-foreground" />
         <div>
-          <p className="font-medium">{value}</p>
+          <p className="font-medium">{row.device}</p>
           {row.current && <Badge variant="secondary" className="text-xs">Current Session</Badge>}
         </div>
       </div>
@@ -154,11 +154,11 @@ const sessionColumns = [
   {
     key: "location" as keyof typeof activeSessionsData[0],
     header: "Location",
-    cell: (value: any, row: any) => (
+    cell: (row: any) => (
       <div>
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground" />
-          {value}
+          {row.location}
         </div>
         <p className="text-xs text-muted-foreground">{row.ipAddress}</p>
       </div>
@@ -167,17 +167,17 @@ const sessionColumns = [
   {
     key: "lastActive" as keyof typeof activeSessionsData[0],
     header: "Last Active",
-    cell: (value: any) => (
+    cell: (row: any) => (
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 text-muted-foreground" />
-        {value}
+        {row.lastActive}
       </div>
     )
   },
   {
     key: "actions" as keyof typeof activeSessionsData[0],
     header: "Actions",
-    cell: (value: any, row: any) => (
+    cell: (row: any) => (
       row.current ? (
         <Badge variant="outline">Current</Badge>
       ) : (
@@ -452,7 +452,6 @@ export default function Security() {
               <DataTable
                 data={loginHistoryData}
                 columns={loginColumns}
-                searchKey="device"
                 searchPlaceholder="Search login history..."
               />
             </CardContent>
@@ -476,7 +475,6 @@ export default function Security() {
               <DataTable
                 data={activeSessionsData}
                 columns={sessionColumns}
-                searchKey="device"
                 searchPlaceholder="Search active sessions..."
               />
             </CardContent>
