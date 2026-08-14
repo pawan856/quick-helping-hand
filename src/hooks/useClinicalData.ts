@@ -198,7 +198,7 @@ export function useSeedDemoData() {
         doctor_id: userId,
         scheduled_at: new Date(new Date().setHours(9 + i, i % 2 === 0 ? 0 : 30, 0, 0)).toISOString(),
         appointment_type: ["Consultation", "Follow-up", "Check-up", "Review"][i % 4],
-        status: i === 0 ? "completed" : i === 1 ? "in_progress" : "scheduled",
+        status: (i === 0 ? "completed" : i === 1 ? "in_progress" : "scheduled") as "completed" | "in_progress" | "scheduled",
       }));
       const { error: apptError } = await supabase.from("appointments").insert(appointments);
       if (apptError) throw apptError;
@@ -226,7 +226,7 @@ export function useSeedDemoData() {
         .filter((p) => p.risk_score > 55)
         .map((p) => ({
           patient_id: p.id,
-          severity: p.risk_score > 85 ? "critical" : p.risk_score > 68 ? "high" : "medium",
+          severity: (p.risk_score > 85 ? "critical" : p.risk_score > 68 ? "high" : "medium") as "critical" | "high" | "medium",
           category: "clinical",
           message:
             p.risk_score > 85
