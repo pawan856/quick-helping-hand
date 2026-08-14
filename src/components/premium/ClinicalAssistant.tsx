@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -123,7 +122,7 @@ export function ClinicalAssistant({ className }: { className?: string }) {
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col gap-4">
-        <ScrollArea className="h-[280px] pr-3" viewportRef={scrollRef}>
+        <div ref={scrollRef} className="h-[280px] overflow-y-auto pr-3">
           {messages.length === 0 ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
@@ -158,7 +157,7 @@ export function ClinicalAssistant({ className }: { className?: string }) {
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <form
           className="flex items-center gap-2"
