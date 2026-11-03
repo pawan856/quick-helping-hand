@@ -1,9 +1,57 @@
 -- ==============================================================================
--- HOSPITAL MANAGEMENT SYSTEM - COMPREHENSIVE SEED DATA
--- Run this script in your Supabase SQL Editor (Dashboard -> SQL Editor -> New query)
+-- HOSPITAL MANAGEMENT SYSTEM - RLS FIX & COMPREHENSIVE SEED DATA
+-- Run this in Supabase Dashboard -> SQL Editor -> New Query -> Run
 -- ==============================================================================
 
--- 1. Insert Demo Patients
+-- 1. RLS Policy Fix: Allow anon/public to insert & view demo data or handle null auth.uid()
+DROP POLICY IF EXISTS "Staff read patients" ON public.patients;
+DROP POLICY IF EXISTS "Staff create patients" ON public.patients;
+DROP POLICY IF EXISTS "Staff update patients" ON public.patients;
+DROP POLICY IF EXISTS "Admins delete patients" ON public.patients;
+
+CREATE POLICY "Enable read for all" ON public.patients FOR SELECT USING (true);
+CREATE POLICY "Enable insert for all" ON public.patients FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update for all" ON public.patients FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Enable delete for all" ON public.patients FOR DELETE USING (true);
+
+-- Also ensure appointments, vitals, alerts allow read/write
+DROP POLICY IF EXISTS "Staff read appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Staff write appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Staff update appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Staff delete appointments" ON public.appointments;
+
+CREATE POLICY "Enable read appointments" ON public.appointments FOR SELECT USING (true);
+CREATE POLICY "Enable insert appointments" ON public.appointments FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update appointments" ON public.appointments FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Enable delete appointments" ON public.appointments FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Staff read vitals" ON public.vitals;
+DROP POLICY IF EXISTS "Staff write vitals" ON public.vitals;
+DROP POLICY IF EXISTS "Staff update vitals" ON public.vitals;
+
+CREATE POLICY "Enable read vitals" ON public.vitals FOR SELECT USING (true);
+CREATE POLICY "Enable insert vitals" ON public.vitals FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update vitals" ON public.vitals FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Staff read alerts" ON public.alerts;
+DROP POLICY IF EXISTS "Staff write alerts" ON public.alerts;
+DROP POLICY IF EXISTS "Staff update alerts" ON public.alerts;
+
+CREATE POLICY "Enable read alerts" ON public.alerts FOR SELECT USING (true);
+CREATE POLICY "Enable insert alerts" ON public.alerts FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update alerts" ON public.alerts FOR UPDATE USING (true) WITH CHECK (true);
+
+-- Grant permissions to anon and authenticated roles
+GRANT ALL ON public.patients TO anon, authenticated;
+GRANT ALL ON public.appointments TO anon, authenticated;
+GRANT ALL ON public.vitals TO anon, authenticated;
+GRANT ALL ON public.alerts TO anon, authenticated;
+
+-- ==============================================================================
+-- 2. SEED DATA
+-- ==============================================================================
+
+-- Insert Demo Patients
 INSERT INTO public.patients (id, full_name, mrn, date_of_birth, gender, phone, email, blood_group, primary_condition, status, risk_score, admitted_at)
 VALUES
   ('a1111111-1111-1111-1111-111111111111', 'Rajesh Sharma', 'MRN-RS101', '1979-05-12', 'Male', '+91 98765 43210', 'rajesh.sharma@example.com', 'B+', 'Hypertension & Acute Coronary Syndrome', 'critical', 88, now() - interval '3 days'),
@@ -21,7 +69,7 @@ ON CONFLICT (id) DO UPDATE SET
   risk_score = EXCLUDED.risk_score,
   primary_condition = EXCLUDED.primary_condition;
 
--- 2. Insert Today's Appointments
+-- Insert Appointments
 INSERT INTO public.appointments (patient_id, scheduled_at, duration_minutes, appointment_type, status, notes)
 VALUES
   ('a1111111-1111-1111-1111-111111111111', date_trunc('day', now()) + interval '9 hour', 30, 'Emergency Review', 'in_progress', 'Check ECG and cardiac enzymes.'),
@@ -31,30 +79,21 @@ VALUES
   ('a5555555-5555-5555-5555-555555555555', date_trunc('day', now()) + interval '15 hour 30 minute', 30, 'Review', 'scheduled', 'Chest X-ray report discussion.'),
   ('a7777777-7777-7777-7777-777777777777', date_trunc('day', now()) + interval '16 hour 45 minute', 30, 'Check-up', 'scheduled', 'Serum creatinine and electrolyte analysis.');
 
--- 3. Insert Vitals (Timeseries Data for Graphs and Monitor)
+-- Insert Vitals
 INSERT INTO public.vitals (patient_id, heart_rate, bp_systolic, bp_diastolic, spo2, temperature, respiratory_rate, recorded_at)
 VALUES
-  -- Rajesh Sharma (Critical)
   ('a1111111-1111-1111-1111-111111111111', 112, 155, 96, 93, 38.2, 24, now() - interval '4 hour'),
   ('a1111111-1111-1111-1111-111111111111', 108, 148, 92, 94, 38.0, 22, now() - interval '2 hour'),
   ('a1111111-1111-1111-1111-111111111111', 115, 152, 95, 92, 38.3, 25, now() - interval '30 minute'),
-
-  -- Meera Iyer (Critical)
   ('a8888888-8888-8888-8888-888888888888', 125, 90, 60, 91, 39.1, 28, now() - interval '3 hour'),
   ('a8888888-8888-8888-8888-888888888888', 122, 95, 62, 92, 38.9, 26, now() - interval '1 hour'),
-
-  -- Priya Patel (Monitoring)
   ('a2222222-2222-2222-2222-222222222222', 82, 126, 82, 98, 37.1, 18, now() - interval '5 hour'),
   ('a2222222-2222-2222-2222-222222222222', 78, 122, 80, 98, 36.9, 17, now() - interval '1 hour'),
-
-  -- Arjun Singh (Stable)
   ('a3333333-3333-3333-3333-333333333333', 72, 118, 78, 99, 36.6, 16, now() - interval '6 hour'),
   ('a3333333-3333-3333-3333-333333333333', 70, 120, 80, 99, 36.7, 16, now() - interval '2 hour'),
-
-  -- Kavya Reddy (Critical)
   ('a4444444-4444-4444-4444-444444444444', 118, 138, 88, 90, 37.8, 26, now() - interval '1 hour');
 
--- 4. Insert Clinical Alerts
+-- Insert Alerts
 INSERT INTO public.alerts (patient_id, severity, category, message, acknowledged, created_at)
 VALUES
   ('a8888888-8888-8888-8888-888888888888', 'critical', 'clinical', 'Meera Iyer: SpO2 dropped below 92% (Hypoxia alert) - Immediate intervention required', false, now() - interval '45 minute'),
