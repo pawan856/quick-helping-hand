@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Search, Settings, Sun, Moon, User, LogOut, HelpCircle } from "lucide-react";
+import { Bell, Search, Settings, Sun, Moon, User, LogOut, HelpCircle, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useNavigate, Link } from "react-router-dom";
+import { format, parseISO } from "date-fns";
 
 interface TopBarProps {
   className?: string;
@@ -20,34 +24,52 @@ interface TopBarProps {
 }
 
 export function TopBar({ className, isDarkMode, onThemeToggle }: TopBarProps) {
-  const [notifications] = useState([
-    { id: 1, title: "New patient registered", time: "2 min ago", type: "info" },
-    { id: 2, title: "Lab results ready", time: "5 min ago", type: "success" },
-    { id: 3, title: "Appointment reminder", time: "10 min ago", type: "warning" },
-  ]);
+  const { session, profile, roles, signOut } = useAuth();
+  const { alerts } = useNotifications();
+  const navigate = useNavigate();
+
+  const openAlerts = alerts.filter(a => !a.acknowledged);
+  const unreadAlerts = openAlerts.slice(0, 4);
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return "DR";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
 
   return (
     <header className={cn(
-      "sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      "sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
       "border-b border-border shadow-soft",
       className
     )}>
       <div className="flex h-16 items-center justify-between px-6">
-        {/* Left: Breadcrumb / Page Title */}
+        {/* Left: Breadcrumb / Title */}
         <div className="flex items-center gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Dashboard</h2>
-            <p className="text-sm text-muted-foreground">Welcome back, Dr. Wilson</p>
+            <h2 className="text-xl font-bold tracking-tight text-foreground">Hospital Management Portal</h2>
+            <p className="text-xs text-muted-foreground">
+              {profile?.full_name ? `Active Clinician: ${profile.full_name}` : "Clinical & Operations Control Desk"}
+            </p>
           </div>
         </div>
 
-        {/* Center: Global Search */}
-        <div className="flex-1 max-w-md mx-8">
+        {/* Center: Search */}
+        <div className="flex-1 max-w-md mx-8 hidden sm:block">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search patients, appointments, records..."
+              placeholder="Quick search patients, appointments, vitals..."
               className={cn(
                 "w-full pl-10 pr-4 py-2 bg-muted/50 border border-border rounded-lg text-sm",
                 "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
@@ -58,114 +80,153 @@ export function TopBar({ className, isDarkMode, onThemeToggle }: TopBarProps) {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {/* Theme Toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={onThemeToggle}
-            className="hover:bg-muted hover-lift"
-            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            className="hover:bg-muted"
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
-            {isDarkMode ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
+            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
-          {/* Notifications */}
+          {/* Notifications Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative hover:bg-muted hover-lift">
+              <Button variant="ghost" size="icon" className="relative hover:bg-muted">
                 <Bell className="h-4 w-4" />
-                {notifications.length > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center animate-pulse-soft"
-                  >
-                    {notifications.length}
+                {openAlerts.length > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px] bg-red-500 hover:bg-red-600">
+                    {openAlerts.length}
                   </Badge>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-0">
-              <DropdownMenuLabel className="p-4 border-b">
-                <div className="flex items-center justify-between">
-                  <span>Notifications</span>
-                  <Badge variant="secondary">{notifications.length} new</Badge>
-                </div>
+            <DropdownMenuContent className="w-80" align="end">
+              <DropdownMenuLabel className="flex justify-between items-center">
+                <span>Hospital Alerts</span>
+                <Badge variant="outline" className="text-xs">
+                  {openAlerts.length} Active
+                </Badge>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <div className="max-h-64 overflow-y-auto">
-                {notifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id} className="p-4 cursor-pointer hover:bg-muted/50">
-                    <div className="flex items-start gap-3 w-full">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full mt-2 flex-shrink-0",
-                        notification.type === "info" && "bg-primary",
-                        notification.type === "success" && "bg-success",
-                        notification.type === "warning" && "bg-warning"
-                      )} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground">{notification.time}</p>
+                {unreadAlerts.length === 0 ? (
+                  <div className="py-4 text-center text-xs text-muted-foreground">
+                    No active alerts
+                  </div>
+                ) : (
+                  unreadAlerts.map((alert) => (
+                    <DropdownMenuItem
+                      key={alert.id}
+                      className="p-3 cursor-pointer"
+                      onClick={() => navigate("/notifications")}
+                    >
+                      <div className="space-y-1 w-full">
+                        <div className="flex items-center justify-between">
+                          <Badge
+                            variant={alert.severity === "critical" ? "destructive" : "secondary"}
+                            className="text-[10px]"
+                          >
+                            {alert.category}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">
+                            {format(parseISO(alert.created_at), "p")}
+                          </span>
+                        </div>
+                        <p className="text-xs font-medium text-foreground line-clamp-2">
+                          {alert.message}
+                        </p>
                       </div>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
+                    </DropdownMenuItem>
+                  ))
+                )}
               </div>
-              <div className="p-2 border-t">
-                <Button variant="ghost" className="w-full text-xs">
-                  View all notifications
+              <DropdownMenuSeparator />
+              <div className="p-1">
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs h-8"
+                  onClick={() => navigate("/notifications")}
+                >
+                  View All Alerts
                 </Button>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
 
           {/* Settings */}
-          <Button variant="ghost" size="icon" className="hover:bg-muted hover-lift">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/settings")}
+            className="hover:bg-muted"
+            title="System Settings"
+          >
             <Settings className="h-4 w-4" />
           </Button>
 
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full hover-lift">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="/placeholder-avatar.jpg" alt="Dr. Sarah Wilson" />
-                  <AvatarFallback className="bg-primary text-primary-foreground">SW</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Dr. Sarah Wilson</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    sarah.wilson@hospital.com
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <HelpCircle className="mr-2 h-4 w-4" />
-                <span>Help & Support</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* User Profile Menu */}
+          {session ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-1 ring-border">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={profile?.avatar_url || ""} alt="User" />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                      {getInitials(profile?.full_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      {profile?.full_name || "Hospital User"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{session.user.email}</p>
+                    <div className="pt-1 flex gap-1">
+                      {roles.length > 0 ? (
+                        roles.map((r) => (
+                          <Badge key={r} variant="outline" className="text-[10px] capitalize">
+                            {r}
+                          </Badge>
+                        ))
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Staff
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/security")}>
+                  <ShieldAlert className="mr-2 h-4 w-4" />
+                  <span>Security & Audits</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button size="sm" onClick={() => navigate("/auth")} className="text-xs">
+              Sign In
+            </Button>
+          )}
         </div>
       </div>
     </header>
