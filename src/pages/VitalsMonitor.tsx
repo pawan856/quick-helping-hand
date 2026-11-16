@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import {
   Thermometer,
   Droplets,
   Plus,
-  Loader2,
   Trash2,
   Wind
 } from "lucide-react";
@@ -38,84 +37,153 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useVitals } from "@/hooks/useVitals";
-import { usePatients } from "@/hooks/usePatients";
 import { useToast } from "@/components/ui/use-toast";
-import { format, parseISO } from "date-fns";
 
-const VitalsMonitor = () => {
-  const { patients } = usePatients();
-  const [selectedPatientId, setSelectedPatientId] = useState<string>("all");
-  const { vitals, isLoading, error, recordVital, deleteVital } = useVitals(
-    selectedPatientId === "all" ? undefined : selectedPatientId
-  );
+export interface LocalVital {
+  id: string | number;
+  patientName: string;
+  heartRate: number;
+  bloodPressure: string;
+  temperature: number;
+  spo2: number;
+  respiratoryRate: number;
+  timestamp: string;
+  recordedBy: string;
+  status: "Normal" | "Elevated" | "Critical";
+}
+
+const INITIAL_VITALS: LocalVital[] = [
+  {
+    id: "v-1",
+    patientName: "Rajesh Sharma",
+    heartRate: 72,
+    bloodPressure: "120/80",
+    temperature: 98.6,
+    spo2: 98,
+    respiratoryRate: 16,
+    timestamp: "2024-01-20 14:30",
+    status: "Normal",
+    recordedBy: "Nurse Priya Sharma"
+  },
+  {
+    id: "v-2",
+    patientName: "Priya Patel",
+    heartRate: 78,
+    bloodPressure: "125/82",
+    temperature: 99.1,
+    spo2: 97,
+    respiratoryRate: 18,
+    timestamp: "2024-01-20 10:15",
+    status: "Elevated",
+    recordedBy: "Dr. Rajesh Kumar"
+  },
+  {
+    id: "v-3",
+    patientName: "Arjun Singh",
+    heartRate: 68,
+    bloodPressure: "118/76",
+    temperature: 98.4,
+    spo2: 99,
+    respiratoryRate: 15,
+    timestamp: "2024-01-20 06:00",
+    status: "Normal",
+    recordedBy: "Nurse Kavya Reddy"
+  },
+  {
+    id: "v-4",
+    patientName: "Kavya Reddy",
+    heartRate: 110,
+    bloodPressure: "145/95",
+    temperature: 100.4,
+    spo2: 93,
+    respiratoryRate: 24,
+    timestamp: "2024-01-20 04:30",
+    status: "Critical",
+    recordedBy: "Dr. Sunita Sharma"
+  }
+];
+
+const LOCAL_STORAGE_KEY_VITALS = "hospital_vitals_data";
+
+export default function VitalsMonitor() {
   const { toast } = useToast();
 
+  const [vitals, setVitals] = useState<LocalVital[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY_VITALS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      // fallback
+    }
+    return INITIAL_VITALS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_VITALS, JSON.stringify(vitals));
+    } catch (e) {
+      // ignore
+    }
+  }, [vitals]);
+
+  const [selectedPatientFilter, setSelectedPatientFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const [formData, setFormData] = useState({
-    patient_id: "",
-    heart_rate: 75,
-    bp_systolic: 120,
-    bp_diastolic: 80,
-    spo2: 98,
+    patientName: "Rajesh Sharma",
+    heartRate: 75,
+    bloodPressure: "120/80",
     temperature: 98.6,
-    respiratory_rate: 16,
+    spo2: 98,
+    respiratoryRate: 16,
+    recordedBy: "Duty Nurse",
   });
 
   const latestVital = vitals[0];
 
-  const openRecordDialog = () => {
-    setFormData({
-      patient_id: selectedPatientId !== "all" ? selectedPatientId : (patients[0]?.id || ""),
-      heart_rate: 75,
-      bp_systolic: 120,
-      bp_diastolic: 80,
-      spo2: 98,
-      temperature: 98.6,
-      respiratory_rate: 16,
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.patient_id) {
-      toast({ title: "Please select a patient", variant: "destructive" });
-      return;
+    const hr = Number(formData.heartRate);
+    const sp = Number(formData.spo2);
+    let calcStatus: "Normal" | "Elevated" | "Critical" = "Normal";
+
+    if (sp < 94 || hr > 105 || hr < 55) {
+      calcStatus = "Critical";
+    } else if (sp < 96 || hr > 95 || Number(formData.temperature) > 99.5) {
+      calcStatus = "Elevated";
     }
 
-    try {
-      await recordVital.mutateAsync({
-        patient_id: formData.patient_id,
-        heart_rate: Number(formData.heart_rate),
-        bp_systolic: Number(formData.bp_systolic),
-        bp_diastolic: Number(formData.bp_diastolic),
-        spo2: Number(formData.spo2),
-        temperature: Number(formData.temperature),
-        respiratory_rate: Number(formData.respiratory_rate),
-        recorded_at: new Date().toISOString(),
-      });
-      toast({ title: "Vitals recorded successfully" });
-      setIsDialogOpen(false);
-    } catch (err: any) {
-      toast({
-        title: "Error saving vitals",
-        description: err.message || "Failed to record",
-        variant: "destructive",
-      });
+    const newVital: LocalVital = {
+      id: `v-${Date.now()}`,
+      patientName: formData.patientName,
+      heartRate: hr,
+      bloodPressure: formData.bloodPressure,
+      temperature: Number(formData.temperature),
+      spo2: sp,
+      respiratoryRate: Number(formData.respiratoryRate),
+      timestamp: new Date().toLocaleString(),
+      recordedBy: formData.recordedBy,
+      status: calcStatus,
+    };
+
+    setVitals((prev) => [newVital, ...prev]);
+    toast({ title: "Vitals recorded successfully" });
+    setIsDialogOpen(false);
+  };
+
+  const handleDelete = (id: string | number) => {
+    if (confirm("Are you sure you want to delete this vital record?")) {
+      setVitals((prev) => prev.filter((v) => v.id !== id));
+      toast({ title: "Vital record deleted successfully" });
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Delete this vital reading?")) {
-      try {
-        await deleteVital.mutateAsync(id);
-        toast({ title: "Vital record deleted" });
-      } catch (err: any) {
-        toast({ title: "Error deleting vital", variant: "destructive" });
-      }
-    }
-  };
+  const filteredVitals = vitals.filter((v) => {
+    if (selectedPatientFilter === "all") return true;
+    return v.patientName === selectedPatientFilter;
+  });
+
+  const uniquePatients = Array.from(new Set(vitals.map((v) => v.patientName)));
 
   return (
     <Layout>
@@ -127,31 +195,31 @@ const VitalsMonitor = () => {
               <Activity className="mr-3 h-8 w-8 text-primary" />
               Real-time Vitals Monitor
             </h1>
-            <p className="text-muted-foreground">Monitor and record continuous patient physiological signals</p>
+            <p className="text-muted-foreground">Monitor and track patient physiological vital signs</p>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by Patient" />
+            <Select value={selectedPatientFilter} onValueChange={setSelectedPatientFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter Patient" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Patients</SelectItem>
-                {patients.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.full_name}
+                {uniquePatients.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Button onClick={openRecordDialog} className="bg-primary hover:bg-primary/90">
+            <Button onClick={() => setIsDialogOpen(true)} className="bg-primary hover:bg-primary/90">
               <Plus className="mr-2 h-4 w-4" />
               Record Vitals
             </Button>
           </div>
         </div>
 
-        {/* Latest Vitals Overview Cards */}
+        {/* Latest Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-red-500">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -160,7 +228,7 @@ const VitalsMonitor = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {latestVital?.heart_rate ?? "—"}{" "}
+                {latestVital ? latestVital.heartRate : "—"}{" "}
                 <span className="text-sm font-normal text-muted-foreground">bpm</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">Normal: 60 - 100 bpm</p>
@@ -174,7 +242,7 @@ const VitalsMonitor = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {latestVital ? `${latestVital.bp_systolic || 120}/${latestVital.bp_diastolic || 80}` : "—"}{" "}
+                {latestVital ? latestVital.bloodPressure : "—"}{" "}
                 <span className="text-sm font-normal text-muted-foreground">mmHg</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">Target: 120/80 mmHg</p>
@@ -188,7 +256,8 @@ const VitalsMonitor = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {latestVital?.spo2 ?? "—"} <span className="text-sm font-normal text-muted-foreground">%</span>
+                {latestVital ? latestVital.spo2 : "—"}{" "}
+                <span className="text-sm font-normal text-muted-foreground">%</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">Target: ≥ 95%</p>
             </CardContent>
@@ -201,7 +270,8 @@ const VitalsMonitor = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {latestVital?.temperature ?? "—"} <span className="text-sm font-normal text-muted-foreground">°F</span>
+                {latestVital ? latestVital.temperature : "—"}{" "}
+                <span className="text-sm font-normal text-muted-foreground">°F</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">Normal: 97.8°F - 99.1°F</p>
             </CardContent>
@@ -211,85 +281,76 @@ const VitalsMonitor = () => {
         {/* History Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex justify-between items-center text-lg">
-              <span>Vitals History ({vitals.length})</span>
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            </CardTitle>
+            <CardTitle className="text-lg">Vitals History ({filteredVitals.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {error ? (
-              <div className="text-center py-8 text-destructive">
-                Error loading vitals: {(error as any).message}
-              </div>
-            ) : vitals.length === 0 ? (
+            {filteredVitals.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Activity className="mx-auto h-12 w-12 opacity-30 mb-3" />
-                <p className="text-base font-medium">No vitals recorded yet</p>
-                <p className="text-sm">Click "Record Vitals" to add the first measurement.</p>
+                <p className="text-base font-medium">No vitals records found</p>
+                <p className="text-sm">Click "Record Vitals" to add a reading.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Time Recorded</TableHead>
+                      <TableHead>Time</TableHead>
                       <TableHead>Patient</TableHead>
                       <TableHead>Heart Rate</TableHead>
                       <TableHead>Blood Pressure</TableHead>
                       <TableHead>SpO2</TableHead>
-                      <TableHead>Temp</TableHead>
-                      <TableHead>Respiratory</TableHead>
+                      <TableHead>Temperature</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Recorded By</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {vitals.map((v) => {
-                      let dateStr = v.recorded_at;
-                      try {
-                        dateStr = format(parseISO(v.recorded_at), "PPP p");
-                      } catch (e) {
-                        // ignore
-                      }
-
-                      return (
-                        <TableRow key={v.id}>
-                          <TableCell className="text-xs font-medium">{dateStr}</TableCell>
-                          <TableCell>
-                            <span className="font-medium text-foreground">
-                              {v.patients?.full_name || "Patient"}
-                            </span>
-                            {v.patients?.mrn && (
-                              <span className="text-xs text-muted-foreground ml-1">({v.patients.mrn})</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={v.heart_rate && (v.heart_rate < 60 || v.heart_rate > 100) ? "destructive" : "outline"}>
-                              {v.heart_rate || "—"} bpm
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {v.bp_systolic && v.bp_diastolic ? `${v.bp_systolic}/${v.bp_diastolic} mmHg` : "—"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={v.spo2 && v.spo2 < 95 ? "destructive" : "secondary"}>
-                              {v.spo2 || "—"}%
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{v.temperature ? `${v.temperature}°F` : "—"}</TableCell>
-                          <TableCell>{v.respiratory_rate ? `${v.respiratory_rate}/min` : "—"}</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(v.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {filteredVitals.map((v) => (
+                      <TableRow key={v.id}>
+                        <TableCell className="text-xs font-medium">{v.timestamp}</TableCell>
+                        <TableCell className="font-semibold">{v.patientName}</TableCell>
+                        <TableCell>
+                          <Badge variant={v.heartRate > 100 || v.heartRate < 60 ? "destructive" : "outline"}>
+                            {v.heartRate} bpm
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{v.bloodPressure} mmHg</TableCell>
+                        <TableCell>
+                          <Badge variant={v.spo2 < 95 ? "destructive" : "secondary"}>
+                            {v.spo2}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{v.temperature}°F</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              v.status === "Critical"
+                                ? "destructive"
+                                : v.status === "Elevated"
+                                ? "secondary"
+                                : "outline"
+                            }
+                            className={v.status === "Normal" ? "text-emerald-700 bg-emerald-50" : ""}
+                          >
+                            {v.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{v.recordedBy}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(v.id)}
+                            title="Delete Vital Record"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
@@ -303,38 +364,30 @@ const VitalsMonitor = () => {
             <DialogHeader>
               <DialogTitle>Record Patient Vitals</DialogTitle>
               <DialogDescription>
-                Input clinical vital sign observations for the selected patient.
+                Input clinical observations and vitals for a patient.
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="vital_patient">Select Patient *</Label>
-                <Select
-                  value={formData.patient_id}
-                  onValueChange={(val) => setFormData({ ...formData, patient_id: val })}
-                >
-                  <SelectTrigger id="vital_patient">
-                    <SelectValue placeholder="Select patient" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patients.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.full_name} ({p.mrn})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="vital_patient">Patient Name *</Label>
+                <Input
+                  id="vital_patient"
+                  required
+                  placeholder="e.g. Rajesh Sharma"
+                  value={formData.patientName}
+                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="heart_rate">Heart Rate (bpm)</Label>
+                  <Label htmlFor="heartRate">Heart Rate (bpm)</Label>
                   <Input
-                    id="heart_rate"
+                    id="heartRate"
                     type="number"
-                    value={formData.heart_rate}
-                    onChange={(e) => setFormData({ ...formData, heart_rate: Number(e.target.value) })}
+                    value={formData.heartRate}
+                    onChange={(e) => setFormData({ ...formData, heartRate: Number(e.target.value) })}
                   />
                 </div>
 
@@ -349,22 +402,12 @@ const VitalsMonitor = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bp_systolic">Systolic BP (mmHg)</Label>
+                  <Label htmlFor="bp">Blood Pressure</Label>
                   <Input
-                    id="bp_systolic"
-                    type="number"
-                    value={formData.bp_systolic}
-                    onChange={(e) => setFormData({ ...formData, bp_systolic: Number(e.target.value) })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bp_diastolic">Diastolic BP (mmHg)</Label>
-                  <Input
-                    id="bp_diastolic"
-                    type="number"
-                    value={formData.bp_diastolic}
-                    onChange={(e) => setFormData({ ...formData, bp_diastolic: Number(e.target.value) })}
+                    id="bp"
+                    placeholder="120/80"
+                    value={formData.bloodPressure}
+                    onChange={(e) => setFormData({ ...formData, bloodPressure: e.target.value })}
                   />
                 </div>
 
@@ -380,12 +423,21 @@ const VitalsMonitor = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="resp">Respiratory Rate (/min)</Label>
+                  <Label htmlFor="resp">Respiratory (/min)</Label>
                   <Input
                     id="resp"
                     type="number"
-                    value={formData.respiratory_rate}
-                    onChange={(e) => setFormData({ ...formData, respiratory_rate: Number(e.target.value) })}
+                    value={formData.respiratoryRate}
+                    onChange={(e) => setFormData({ ...formData, respiratoryRate: Number(e.target.value) })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="by">Recorded By</Label>
+                  <Input
+                    id="by"
+                    value={formData.recordedBy}
+                    onChange={(e) => setFormData({ ...formData, recordedBy: e.target.value })}
                   />
                 </div>
               </div>
@@ -394,10 +446,7 @@ const VitalsMonitor = () => {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={recordVital.isPending}>
-                  {recordVital.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Vitals
-                </Button>
+                <Button type="submit">Save Vitals</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -405,6 +454,4 @@ const VitalsMonitor = () => {
       </div>
     </Layout>
   );
-};
-
-export default VitalsMonitor;
+}

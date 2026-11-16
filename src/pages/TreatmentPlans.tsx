@@ -5,6 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   UserCheck, 
   Plus, 
@@ -15,11 +33,35 @@ import {
   AlertCircle,
   Users,
   Activity,
-  FileText
+  FileText,
+  Trash2
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useToast } from "@/components/ui/use-toast";
 
-const treatmentPlansData = [
+interface Milestone {
+  id: number;
+  title: string;
+  status: "completed" | "in-progress" | "pending";
+  dueDate: string;
+  completedDate: string | null;
+}
+
+interface TreatmentPlan {
+  id: string;
+  patientName: string;
+  patientId: string;
+  condition: string;
+  startDate: string;
+  endDate: string;
+  status: "Active" | "Completed" | "Pending";
+  progress: number;
+  assignedDoctors: string[];
+  department: string;
+  milestones: Milestone[];
+}
+
+const initialTreatmentPlansData: TreatmentPlan[] = [
   {
     id: "1",
     patientName: "Arjun Singh",
@@ -63,114 +105,113 @@ const treatmentPlansData = [
     id: "3",
     patientName: "Vikram Gupta",
     patientId: "P-2024-003",
-    condition: "Post-Surgery Recovery",
+    condition: "Post-Surgery Cardiac Rehab",
     startDate: "2024-01-05",
-    endDate: "2024-02-05",
-    status: "Completed",
-    progress: 100,
-    assignedDoctors: ["Dr. Amit Verma", "Dr. Priya Patel"],
-    department: "Surgery",
+    endDate: "2024-03-05",
+    status: "Active",
+    progress: 80,
+    assignedDoctors: ["Dr. Rajesh Kumar"],
+    department: "Cardiology",
     milestones: [
-      { id: 1, title: "Post-Op Assessment", status: "completed", dueDate: "2024-01-06", completedDate: "2024-01-06" },
-      { id: 2, title: "Pain Management", status: "completed", dueDate: "2024-01-10", completedDate: "2024-01-08" },
-      { id: 3, title: "Physiotherapy Start", status: "completed", dueDate: "2024-01-15", completedDate: "2024-01-15" },
-      { id: 4, title: "Wound Check", status: "completed", dueDate: "2024-01-25", completedDate: "2024-01-25" },
-      { id: 5, title: "Final Clearance", status: "completed", dueDate: "2024-02-05", completedDate: "2024-02-03" }
+      { id: 1, title: "Surgery Follow-up", status: "completed", dueDate: "2024-01-05", completedDate: "2024-01-05" },
+      { id: 2, title: "Physical Therapy Phase 1", status: "completed", dueDate: "2024-01-20", completedDate: "2024-01-20" },
+      { id: 3, title: "Stress Test", status: "in-progress", dueDate: "2024-02-10", completedDate: null },
+      { id: 4, title: "Final Clearance", status: "pending", dueDate: "2024-03-05", completedDate: null }
     ]
   }
 ];
 
-const MilestoneTimeline = ({ milestones }: { milestones: any[] }) => {
-  return (
-    <div className="space-y-4">
-      {milestones.map((milestone, index) => (
-        <div key={milestone.id} className="flex items-start gap-4">
-          <div className="flex flex-col items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              milestone.status === 'completed' 
-                ? 'bg-success text-success-foreground' 
-                : milestone.status === 'in-progress'
-                ? 'bg-warning text-warning-foreground animate-pulse'
-                : 'bg-muted text-muted-foreground'
-            }`}>
-              {milestone.status === 'completed' ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : milestone.status === 'in-progress' ? (
-                <AlertCircle className="h-4 w-4" />
-              ) : (
-                <Circle className="h-4 w-4" />
-              )}
-            </div>
-            {index < milestones.length - 1 && (
-              <div className={`w-0.5 h-8 mt-2 ${
-                milestone.status === 'completed' ? 'bg-success' : 'bg-muted'
-              }`} />
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">{milestone.title}</h4>
-              <Badge variant={
-                milestone.status === 'completed' ? 'secondary' :
-                milestone.status === 'in-progress' ? 'default' : 'outline'
-              }>
-                {milestone.status === 'completed' ? 'Completed' : 
-                 milestone.status === 'in-progress' ? 'In Progress' : 'Pending'}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Due: {milestone.dueDate}</span>
-              {milestone.completedDate && (
-                <span>Completed: {milestone.completedDate}</span>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 export default function TreatmentPlans() {
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const { toast } = useToast();
+  const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>(initialTreatmentPlansData);
+  const [selectedPlan, setSelectedPlan] = useState<TreatmentPlan | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const activePlans = treatmentPlansData.filter(plan => plan.status === "Active").length;
-  const completedPlans = treatmentPlansData.filter(plan => plan.status === "Completed").length;
-  const totalMilestones = treatmentPlansData.reduce((acc, plan) => acc + plan.milestones.length, 0);
-  const completedMilestones = treatmentPlansData.reduce((acc, plan) => 
+  // Form State
+  const [formData, setFormData] = useState({
+    patientName: "",
+    condition: "",
+    department: "Cardiology",
+    assignedDoctor: "Dr. Rajesh Kumar",
+    startDate: new Date().toISOString().slice(0, 10),
+    endDate: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
+  });
+
+  const handleCreatePlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.patientName.trim()) {
+      toast({ title: "Patient Name is required", variant: "destructive" });
+      return;
+    }
+
+    const newPlan: TreatmentPlan = {
+      id: String(Date.now()),
+      patientName: formData.patientName,
+      patientId: `P-${Math.floor(1000 + Math.random() * 9000)}`,
+      condition: formData.condition || "General Therapy",
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      status: "Active",
+      progress: 10,
+      assignedDoctors: [formData.assignedDoctor],
+      department: formData.department,
+      milestones: [
+        { id: 1, title: "Initial Workup & Evaluation", status: "completed", dueDate: formData.startDate, completedDate: formData.startDate },
+        { id: 2, title: "Therapy Protocol Implementation", status: "in-progress", dueDate: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10), completedDate: null },
+        { id: 3, title: "Mid-Term Clinical Evaluation", status: "pending", dueDate: new Date(Date.now() + 45 * 86400000).toISOString().slice(0, 10), completedDate: null },
+        { id: 4, title: "Discharge & Outcome Review", status: "pending", dueDate: formData.endDate, completedDate: null }
+      ]
+    };
+
+    setTreatmentPlans([newPlan, ...treatmentPlans]);
+    toast({ title: "New Treatment Plan created successfully" });
+    setIsDialogOpen(false);
+    setFormData({
+      patientName: "",
+      condition: "",
+      department: "Cardiology",
+      assignedDoctor: "Dr. Rajesh Kumar",
+      startDate: new Date().toISOString().slice(0, 10),
+      endDate: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
+    });
+  };
+
+  const handleDeletePlan = (id: string) => {
+    if (confirm("Are you sure you want to delete this treatment plan?")) {
+      setTreatmentPlans(treatmentPlans.filter(p => p.id !== id));
+      if (selectedPlan?.id === id) setSelectedPlan(null);
+      toast({ title: "Treatment plan deleted successfully" });
+    }
+  };
+
+  const activePlans = treatmentPlans.filter(plan => plan.status === "Active").length;
+  const completedPlans = treatmentPlans.filter(plan => plan.status === "Completed").length;
+  const totalMilestones = treatmentPlans.reduce((acc, plan) => acc + plan.milestones.length, 0);
+  const completedMilestones = treatmentPlans.reduce((acc, plan) => 
     acc + plan.milestones.filter(m => m.status === "completed").length, 0);
 
   return (
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Treatment Plans</h1>
-            <p className="text-muted-foreground mt-1">Manage patient treatment timelines and progress tracking</p>
+            <p className="text-muted-foreground mt-1">Manage patient treatment timelines, protocols, and milestones</p>
           </div>
-          <Button>
+          <Button onClick={() => setIsDialogOpen(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 mr-2" />
             New Treatment Plan
           </Button>
-        </motion.div>
+        </div>
 
         {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-4"
-        >
-          <Card className="hover:shadow-lg transition-all duration-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="hover:shadow-md transition-all">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{treatmentPlansData.length}</p>
+                  <p className="text-2xl font-bold text-foreground">{treatmentPlans.length}</p>
                   <p className="text-sm text-muted-foreground">Total Plans</p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -179,13 +220,13 @@ export default function TreatmentPlans() {
               </div>
             </CardContent>
           </Card>
-          
-          <Card className="hover:shadow-lg transition-all duration-200">
+
+          <Card className="hover:shadow-md transition-all">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold text-success">{activePlans}</p>
-                  <p className="text-sm text-muted-foreground">Active</p>
+                  <p className="text-2xl font-bold text-foreground">{activePlans}</p>
+                  <p className="text-sm text-muted-foreground">Active Plans</p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
                   <Activity className="h-6 w-6 text-success" />
@@ -194,170 +235,213 @@ export default function TreatmentPlans() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-200">
+          <Card className="hover:shadow-md transition-all">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold text-muted-foreground">{completedPlans}</p>
+                  <p className="text-2xl font-bold text-foreground">{completedMilestones}/{totalMilestones}</p>
+                  <p className="text-sm text-muted-foreground">Milestones Met</p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-warning" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{completedPlans}</p>
                   <p className="text-sm text-muted-foreground">Completed</p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-muted/10 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-muted-foreground" />
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          <Card className="hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-accent">{Math.round((completedMilestones / totalMilestones) * 100)}%</p>
-                  <p className="text-sm text-muted-foreground">Avg Progress</p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-                  <FileText className="h-6 w-6 text-accent" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        </div>
 
         {/* Treatment Plans Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-        >
-          {treatmentPlansData.map((plan, index) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index }}
-            >
-              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer glass-morphism"
-                    onClick={() => setSelectedPlan(plan)}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {treatmentPlans.map((plan) => (
+            <Card key={plan.id} className="hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
                       <CardTitle className="text-lg">{plan.patientName}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{plan.patientId}</p>
+                      <Badge variant="outline" className="text-xs">{plan.patientId}</Badge>
                     </div>
-                    <Badge variant={plan.status === "Active" ? "secondary" : "outline"}>
+                    <p className="text-sm font-medium text-primary">{plan.condition}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={plan.status === "Active" ? "default" : "secondary"}>
                       {plan.status}
                     </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive h-8 w-8"
+                      onClick={() => handleDeletePlan(plan.id)}
+                      title="Delete Plan"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-medium text-sm mb-1">Condition</h4>
-                    <p className="text-sm text-muted-foreground">{plan.condition}</p>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">{plan.progress}%</span>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Start Date</p>
-                      <p className="font-medium">{plan.startDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">End Date</p>
-                      <p className="font-medium">{plan.endDate}</p>
-                    </div>
-                  </div>
+                  <Progress value={plan.progress} className="h-2" />
+                </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Progress</span>
-                      <span className="text-sm text-muted-foreground">{plan.progress}%</span>
-                    </div>
-                    <Progress value={plan.progress} className="h-2" />
+                <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>Start: {plan.startDate}</span>
                   </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Target: {plan.endDate}</span>
+                  </div>
+                </div>
 
-                  <div>
-                    <p className="text-sm font-medium mb-2">Assigned Team</p>
-                    <div className="flex items-center gap-2">
-                      {plan.assignedDoctors.map((doctor, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">
-                              {doctor.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs text-muted-foreground">{doctor}</span>
+                <div className="border-t pt-3 space-y-2">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                    Key Milestones ({plan.milestones.filter(m => m.status === 'completed').length}/{plan.milestones.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {plan.milestones.map((milestone) => (
+                      <div key={milestone.id} className="flex items-center justify-between text-xs py-1">
+                        <div className="flex items-center gap-2">
+                          {milestone.status === "completed" ? (
+                            <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : milestone.status === "in-progress" ? (
+                            <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                          ) : (
+                            <Circle className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
+                          <span className={milestone.status === "completed" ? "line-through text-muted-foreground" : "font-medium"}>
+                            {milestone.title}
+                          </span>
                         </div>
-                      ))}
-                    </div>
+                        <span className="text-muted-foreground text-[11px]">{milestone.dueDate}</span>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline">{plan.department}</Badge>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CheckCircle className="h-3 w-3" />
-                      {plan.milestones.filter(m => m.status === "completed").length}/{plan.milestones.length} milestones
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
-        </motion.div>
+        </div>
 
-        {/* Selected Plan Details Modal */}
-        {selectedPlan && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-            onClick={() => setSelectedPlan(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-background rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-6 border-b">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedPlan.condition}</h2>
-                    <p className="text-muted-foreground">{selectedPlan.patientName} - {selectedPlan.patientId}</p>
-                  </div>
-                  <Button variant="ghost" onClick={() => setSelectedPlan(null)}>
-                    ×
-                  </Button>
+        {/* Create Treatment Plan Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-md sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>New Treatment Plan</DialogTitle>
+              <DialogDescription>
+                Set up a structured therapeutic protocol and timeline.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleCreatePlan} className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="plan_patient">Patient Name *</Label>
+                <Input
+                  id="plan_patient"
+                  required
+                  placeholder="e.g. Ramesh Kumar"
+                  value={formData.patientName}
+                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="plan_condition">Diagnosis / Treatment Goal *</Label>
+                <Input
+                  id="plan_condition"
+                  required
+                  placeholder="e.g. Post-Cardiac Stent Rehabilitation"
+                  value={formData.condition}
+                  onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="plan_dept">Department</Label>
+                  <Select
+                    value={formData.department}
+                    onValueChange={(val) => setFormData({ ...formData, department: val })}
+                  >
+                    <SelectTrigger id="plan_dept">
+                      <SelectValue placeholder="Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cardiology">Cardiology</SelectItem>
+                      <SelectItem value="Endocrinology">Endocrinology</SelectItem>
+                      <SelectItem value="Orthopedics">Orthopedics</SelectItem>
+                      <SelectItem value="Neurology">Neurology</SelectItem>
+                      <SelectItem value="General Medicine">General Medicine</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="plan_doc">Primary Doctor</Label>
+                  <Select
+                    value={formData.assignedDoctor}
+                    onValueChange={(val) => setFormData({ ...formData, assignedDoctor: val })}
+                  >
+                    <SelectTrigger id="plan_doc">
+                      <SelectValue placeholder="Doctor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Dr. Rajesh Kumar">Dr. Rajesh Kumar</SelectItem>
+                      <SelectItem value="Dr. Priya Patel">Dr. Priya Patel</SelectItem>
+                      <SelectItem value="Dr. Sunita Sharma">Dr. Sunita Sharma</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="start_date">Start Date</Label>
+                  <Input
+                    id="start_date"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="end_date">Target End Date</Label>
+                  <Input
+                    id="end_date"
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  />
                 </div>
               </div>
-              
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{selectedPlan.progress}%</p>
-                    <p className="text-sm text-muted-foreground">Complete</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-success">
-                      {selectedPlan.milestones.filter((m: any) => m.status === "completed").length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-warning">
-                      {selectedPlan.milestones.filter((m: any) => m.status === "pending").length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Pending</p>
-                  </div>
-                </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Treatment Timeline</h3>
-                  <MilestoneTimeline milestones={selectedPlan.milestones} />
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+              <DialogFooter className="pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Create Plan</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

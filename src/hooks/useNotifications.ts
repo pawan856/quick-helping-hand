@@ -35,17 +35,19 @@ export function useNotifications() {
 
   // Real-time Supabase subscription
   useEffect(() => {
+    // Unique channel per hook mount to prevent duplicate subscribe error
+    const channelName = `realtime-alerts-${Math.random().toString(36).slice(2, 9)}`;
     const channel = supabase
-      .channel("realtime-alerts")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "alerts" },
         (payload) => {
           const newAlert = payload.new as Alert;
           toast({
-            title: `Alert: ${newAlert.category.toUpperCase()}`,
-            description: newAlert.message,
-            variant: newAlert.severity === "critical" || newAlert.severity === "high" ? "destructive" : "default",
+            title: `Alert: ${newAlert?.category ? newAlert.category.toUpperCase() : "HOSPITAL"}`,
+            description: newAlert?.message || "New alert triggered",
+            variant: newAlert?.severity === "critical" || newAlert?.severity === "high" ? "destructive" : "default",
           });
           queryClient.invalidateQueries({ queryKey: ["alerts"] });
         }

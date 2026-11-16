@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { 
   Settings as SettingsIcon, 
@@ -28,6 +28,22 @@ import { useToast } from "@/hooks/use-toast";
 export default function Settings() {
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAvatarUrl(reader.result as string);
+        toast({
+          title: "Profile Photo Updated",
+          description: "Your photo has been uploaded successfully.",
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const [profile, setProfile] = useState({
     firstName: "Dr. Sarah",
     lastName: "Wilson",
@@ -130,13 +146,28 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                   {/* Avatar Section */}
                   <div className="flex items-center gap-6">
-                    <Avatar className="h-24 w-24">
-                      <AvatarFallback className="text-2xl">
+                    <Avatar className="h-24 w-24 border-2 border-primary/20">
+                      {avatarUrl ? (
+                        <AvatarImage src={avatarUrl} alt="User" />
+                      ) : null}
+                      <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
                         {profile.firstName[0]}{profile.lastName[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
-                      <Button variant="outline" size="sm">
+                      <input
+                        type="file"
+                        id="profile-pic-upload"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePhotoUpload}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => document.getElementById("profile-pic-upload")?.click()}
+                      >
                         <Upload className="h-4 w-4 mr-2" />
                         Upload Photo
                       </Button>

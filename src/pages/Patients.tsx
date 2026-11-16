@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,7 @@ import {
   Phone, 
   Mail, 
   Calendar,
-  Loader2,
-  Activity
+  Loader2
 } from "lucide-react";
 import {
   Table,
@@ -41,42 +40,140 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { usePatients, Patient } from "@/hooks/usePatients";
 import { useToast } from "@/components/ui/use-toast";
 
-type PatientStatus = "stable" | "monitoring" | "critical" | "discharged";
+export interface LocalPatient {
+  id: string | number;
+  name: string;
+  age: number;
+  gender: string;
+  phone: string;
+  email: string;
+  lastVisit: string;
+  condition: string;
+  status: "Active" | "Inactive";
+  mrn?: string;
+  bloodGroup?: string;
+}
 
-const Patients = () => {
-  const { patients, isLoading, error, createPatient, updatePatient, deletePatient } = usePatients();
+const INITIAL_PATIENTS: LocalPatient[] = [
+  {
+    id: 1,
+    name: "Rajesh Sharma",
+    age: 45,
+    gender: "Male",
+    phone: "+91 98765-43210",
+    email: "rajesh.sharma@email.com",
+    lastVisit: "2024-01-15",
+    condition: "Hypertension",
+    status: "Active",
+    bloodGroup: "B+",
+    mrn: "MRN-RS101"
+  },
+  {
+    id: 2,
+    name: "Priya Patel",
+    age: 32,
+    gender: "Female",
+    phone: "+91 98765-43211",
+    email: "priya.patel@email.com",
+    lastVisit: "2024-01-12",
+    condition: "Diabetes",
+    status: "Active",
+    bloodGroup: "A+",
+    mrn: "MRN-PP102"
+  },
+  {
+    id: 3,
+    name: "Arjun Singh",
+    age: 28,
+    gender: "Male",
+    phone: "+91 98765-43212",
+    email: "arjun.singh@email.com",
+    lastVisit: "2024-01-10",
+    condition: "Asthma",
+    status: "Inactive",
+    bloodGroup: "O+",
+    mrn: "MRN-AS103"
+  },
+  {
+    id: 4,
+    name: "Kavya Reddy",
+    age: 55,
+    gender: "Female",
+    phone: "+91 98765-43213",
+    email: "kavya.reddy@email.com",
+    lastVisit: "2024-01-08",
+    condition: "Arthritis",
+    status: "Active",
+    bloodGroup: "AB+",
+    mrn: "MRN-KR104"
+  },
+  {
+    id: 5,
+    name: "Vikram Gupta",
+    age: 38,
+    gender: "Male",
+    phone: "+91 98765-43214",
+    email: "vikram.gupta@email.com",
+    lastVisit: "2024-01-05",
+    condition: "Migraine",
+    status: "Active",
+    bloodGroup: "B-",
+    mrn: "MRN-VG105"
+  }
+];
+
+const LOCAL_STORAGE_KEY = "hospital_patients_data";
+
+export default function Patients() {
   const { toast } = useToast();
+
+  const [patients, setPatients] = useState<LocalPatient[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      // fallback
+    }
+    return INITIAL_PATIENTS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(patients));
+    } catch (e) {
+      // ignore
+    }
+  }, [patients]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [editingPatient, setEditingPatient] = useState<LocalPatient | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
-    full_name: "",
+    name: "",
+    age: 30,
     gender: "Male",
-    date_of_birth: "",
     phone: "",
     email: "",
-    blood_group: "O+",
-    primary_condition: "",
-    status: "stable" as PatientStatus,
+    bloodGroup: "O+",
+    condition: "",
+    status: "Active" as "Active" | "Inactive",
   });
 
   const resetForm = () => {
     setFormData({
-      full_name: "",
+      name: "",
+      age: 30,
       gender: "Male",
-      date_of_birth: "",
       phone: "",
       email: "",
-      blood_group: "O+",
-      primary_condition: "",
-      status: "stable",
+      bloodGroup: "O+",
+      condition: "",
+      status: "Active",
     });
     setEditingPatient(null);
   };
@@ -86,90 +183,72 @@ const Patients = () => {
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (patient: Patient) => {
+  const openEditDialog = (patient: LocalPatient) => {
     setEditingPatient(patient);
     setFormData({
-      full_name: patient.full_name || "",
+      name: patient.name,
+      age: patient.age || 30,
       gender: patient.gender || "Male",
-      date_of_birth: patient.date_of_birth || "",
       phone: patient.phone || "",
       email: patient.email || "",
-      blood_group: patient.blood_group || "O+",
-      primary_condition: patient.primary_condition || "",
-      status: patient.status as PatientStatus,
+      bloodGroup: patient.bloodGroup || "O+",
+      condition: patient.condition || "",
+      status: patient.status || "Active",
     });
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.full_name.trim()) {
+    if (!formData.name.trim()) {
       toast({ title: "Name is required", variant: "destructive" });
       return;
     }
 
-    try {
-      if (editingPatient) {
-        await updatePatient.mutateAsync({
-          id: editingPatient.id,
-          updates: formData,
-        });
-        toast({ title: "Patient updated successfully" });
-      } else {
-        await createPatient.mutateAsync(formData);
-        toast({ title: "Patient added successfully" });
-      }
-      setIsDialogOpen(false);
-      resetForm();
-    } catch (err: any) {
-      toast({
-        title: "Error saving patient",
-        description: err.message || "Something went wrong",
-        variant: "destructive",
-      });
+    if (editingPatient) {
+      setPatients((prev) =>
+        prev.map((p) =>
+          p.id === editingPatient.id
+            ? {
+                ...p,
+                ...formData,
+              }
+            : p
+        )
+      );
+      toast({ title: "Patient updated successfully" });
+    } else {
+      const newPatient: LocalPatient = {
+        id: Date.now(),
+        ...formData,
+        lastVisit: new Date().toISOString().slice(0, 10),
+        mrn: `MRN-${Math.floor(1000 + Math.random() * 9000)}`,
+      };
+      setPatients((prev) => [newPatient, ...prev]);
+      toast({ title: "Patient added successfully" });
     }
+
+    setIsDialogOpen(false);
+    resetForm();
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const handleDelete = (id: string | number, name: string) => {
     if (confirm(`Are you sure you want to delete patient "${name}"?`)) {
-      try {
-        await deletePatient.mutateAsync(id);
-        toast({ title: "Patient deleted successfully" });
-      } catch (err: any) {
-        toast({
-          title: "Error deleting patient",
-          description: err.message || "Failed to delete",
-          variant: "destructive",
-        });
-      }
+      setPatients((prev) => prev.filter((p) => p.id !== id));
+      toast({ title: "Patient deleted successfully" });
     }
   };
 
   const filteredPatients = patients.filter((patient) => {
     const matchesSearch =
-      patient.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (patient.phone && patient.phone.includes(searchQuery)) ||
-      (patient.mrn && patient.mrn.toLowerCase().includes(searchQuery.toLowerCase()));
+      (patient.condition && patient.condition.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus = statusFilter === "all" || patient.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "critical":
-        return <Badge variant="destructive">Critical</Badge>;
-      case "monitoring":
-        return <Badge className="bg-amber-500 hover:bg-amber-600">Monitoring</Badge>;
-      case "stable":
-        return <Badge className="bg-emerald-600 hover:bg-emerald-700">Stable</Badge>;
-      case "discharged":
-        return <Badge variant="secondary">Discharged</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
 
   return (
     <Layout>
@@ -181,7 +260,7 @@ const Patients = () => {
               <Users className="mr-3 h-8 w-8 text-primary" />
               Patient Management
             </h1>
-            <p className="text-muted-foreground">Manage and track all admitted and outpatient records</p>
+            <p className="text-muted-foreground">Manage and monitor all hospital patient records</p>
           </div>
           <Button onClick={openAddDialog} className="bg-primary hover:bg-primary/90 shadow-sm">
             <Plus className="mr-2 h-4 w-4" />
@@ -192,14 +271,14 @@ const Patients = () => {
         {/* Search and Filters */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Filter & Search</CardTitle>
+            <CardTitle className="text-lg">Search & Filter</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, MRN, email, or phone..."
+                  placeholder="Search by name, email, condition or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -211,10 +290,8 @@ const Patients = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="stable">Stable</SelectItem>
-                  <SelectItem value="monitoring">Monitoring</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="discharged">Discharged</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -226,28 +303,23 @@ const Patients = () => {
           <CardHeader>
             <CardTitle className="flex justify-between items-center text-lg">
               <span>All Patients ({filteredPatients.length})</span>
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {error ? (
-              <div className="text-center py-8 text-destructive">
-                Error loading patients: {(error as any).message}
-              </div>
-            ) : filteredPatients.length === 0 ? (
+            {filteredPatients.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Users className="mx-auto h-12 w-12 opacity-30 mb-3" />
                 <p className="text-base font-medium">No patients found</p>
-                <p className="text-sm">Click "Add New Patient" to register the first patient record.</p>
+                <p className="text-sm">Click "Add New Patient" to register a patient.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>MRN & Name</TableHead>
-                      <TableHead>Demographics</TableHead>
+                      <TableHead>Patient</TableHead>
                       <TableHead>Contact</TableHead>
+                      <TableHead>Last Visit</TableHead>
                       <TableHead>Condition</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -258,51 +330,44 @@ const Patients = () => {
                       <TableRow key={patient.id}>
                         <TableCell>
                           <div>
-                            <div className="font-semibold text-foreground">{patient.full_name}</div>
-                            <div className="text-xs text-muted-foreground font-mono">{patient.mrn}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <span>{patient.gender || "N/A"}</span>
-                            {patient.date_of_birth && (
-                              <span className="text-muted-foreground ml-1">
-                                • DOB: {patient.date_of_birth}
-                              </span>
-                            )}
-                            {patient.blood_group && (
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {patient.blood_group}
-                              </Badge>
+                            <div className="font-semibold text-foreground">{patient.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {patient.age} years • {patient.gender} {patient.bloodGroup ? `• ${patient.bloodGroup}` : ""}
+                            </div>
+                            {patient.mrn && (
+                              <div className="text-[11px] font-mono text-muted-foreground/80">{patient.mrn}</div>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-0.5 text-xs">
-                            {patient.phone && (
-                              <div className="flex items-center text-muted-foreground">
-                                <Phone className="mr-1.5 h-3 w-3" />
-                                {patient.phone}
-                              </div>
-                            )}
-                            {patient.email && (
-                              <div className="flex items-center text-muted-foreground">
-                                <Mail className="mr-1.5 h-3 w-3" />
-                                {patient.email}
-                              </div>
-                            )}
+                          <div className="space-y-1">
+                            <div className="flex items-center text-xs">
+                              <Phone className="mr-1.5 h-3 w-3 text-muted-foreground" />
+                              {patient.phone}
+                            </div>
+                            <div className="flex items-center text-xs">
+                              <Mail className="mr-1.5 h-3 w-3 text-muted-foreground" />
+                              {patient.email}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          {patient.primary_condition ? (
-                            <Badge variant="secondary" className="font-normal">
-                              {patient.primary_condition}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
+                          <div className="flex items-center text-xs">
+                            <Calendar className="mr-1.5 h-3 w-3 text-muted-foreground" />
+                            {patient.lastVisit}
+                          </div>
                         </TableCell>
-                        <TableCell>{getStatusBadge(patient.status)}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{patient.condition}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={patient.status === "Active" ? "default" : "secondary"}
+                            className={patient.status === "Active" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                          >
+                            {patient.status}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             <Button
@@ -317,7 +382,7 @@ const Patients = () => {
                               variant="ghost"
                               size="icon"
                               className="text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(patient.id, patient.full_name)}
+                              onClick={() => handleDelete(patient.id, patient.name)}
                               title="Delete Patient"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -339,20 +404,30 @@ const Patients = () => {
             <DialogHeader>
               <DialogTitle>{editingPatient ? "Edit Patient Details" : "Register New Patient"}</DialogTitle>
               <DialogDescription>
-                Fill in the basic demographic and medical condition details.
+                Fill in the demographic and medical details.
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4 py-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="full_name">Full Name *</Label>
+                  <Label htmlFor="full_name">Patient Name *</Label>
                   <Input
                     id="full_name"
                     required
                     placeholder="e.g. Ramesh Kumar"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    value={formData.age}
+                    onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
                   />
                 </div>
 
@@ -374,20 +449,10 @@ const Patients = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dob">Date of Birth</Label>
-                  <Input
-                    id="dob"
-                    type="date"
-                    value={formData.date_of_birth}
-                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="blood_group">Blood Group</Label>
                   <Select
-                    value={formData.blood_group}
-                    onValueChange={(val) => setFormData({ ...formData, blood_group: val })}
+                    value={formData.bloodGroup}
+                    onValueChange={(val) => setFormData({ ...formData, bloodGroup: val })}
                   >
                     <SelectTrigger id="blood_group">
                       <SelectValue placeholder="Blood Group" />
@@ -403,19 +468,17 @@ const Patients = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="status">Patient Status</Label>
+                  <Label htmlFor="status">Status</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(val: PatientStatus) => setFormData({ ...formData, status: val })}
+                    onValueChange={(val: "Active" | "Inactive") => setFormData({ ...formData, status: val })}
                   >
                     <SelectTrigger id="status">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="stable">Stable</SelectItem>
-                      <SelectItem value="monitoring">Monitoring</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
-                      <SelectItem value="discharged">Discharged</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -424,7 +487,7 @@ const Patients = () => {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
-                    placeholder="+91 9876543210"
+                    placeholder="+91 98765-43210"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
@@ -442,12 +505,12 @@ const Patients = () => {
                 </div>
 
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="condition">Primary Condition / Diagnosis</Label>
+                  <Label htmlFor="condition">Medical Condition</Label>
                   <Input
                     id="condition"
-                    placeholder="e.g. Hypertension, Acute Gastritis"
-                    value={formData.primary_condition}
-                    onChange={(e) => setFormData({ ...formData, primary_condition: e.target.value })}
+                    placeholder="e.g. Hypertension, Diabetes"
+                    value={formData.condition}
+                    onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
                   />
                 </div>
               </div>
@@ -460,13 +523,7 @@ const Patients = () => {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={createPatient.isPending || updatePatient.isPending}
-                >
-                  {(createPatient.isPending || updatePatient.isPending) && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                <Button type="submit">
                   {editingPatient ? "Save Changes" : "Register Patient"}
                 </Button>
               </DialogFooter>
@@ -476,6 +533,4 @@ const Patients = () => {
       </div>
     </Layout>
   );
-};
-
-export default Patients;
+}
