@@ -15,10 +15,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync(typeOrmConfig),
-    ThrottlerModule.forRoot({
-      limit: 20,
-      ttl: 60,
-    }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     AuthModule,
     ClinicalModule,
     SystemModule,

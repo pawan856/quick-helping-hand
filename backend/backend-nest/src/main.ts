@@ -13,7 +13,7 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.use(helmet());
   app.enableCors();
-  app.useGlobalGuards(new ThrottlerGuard());
+  // app.useGlobalGuards(new ThrottlerGuard()); // ThrottlerGuard is best injected via APP_GUARD
 
   const config = new DocumentBuilder()
     .setTitle('Quick Helping Hand API')
