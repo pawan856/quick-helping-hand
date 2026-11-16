@@ -1,0 +1,1 @@
+Keep reporting in a dedicated Analytics page and route using existing client-side data queries and design-system components, so operational reporting stays separate from clinical workflows.
