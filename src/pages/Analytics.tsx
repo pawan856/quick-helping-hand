@@ -54,7 +54,7 @@ const statusColors: Record<string, string> = {
 function csvCell(value: unknown) {
   const text = String(value ?? "");
   const safeText = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
-  return `"${safeText.replaceAll('"', '""')}"`;
+  return `"${safeText.replace(/"/g, '""')}"`;
 }
 
 function downloadCsv(rows: (string | number)[][]) {
