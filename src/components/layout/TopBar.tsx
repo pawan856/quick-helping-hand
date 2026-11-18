@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Search, Settings, Sun, Moon, User, LogOut, HelpCircle, ShieldAlert } from "lucide-react";
+import { Bell, Search, Settings, Sun, Moon, User, LogOut, HelpCircle, ShieldAlert, Building2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
@@ -25,6 +26,7 @@ interface TopBarProps {
 
 export function TopBar({ className, isDarkMode, onThemeToggle }: TopBarProps) {
   const { session, profile, roles, signOut } = useAuth();
+  const { currentHospital, setHospital, hospitals } = useTenant();
   const { alerts } = useNotifications();
   const navigate = useNavigate();
 
@@ -53,23 +55,47 @@ export function TopBar({ className, isDarkMode, onThemeToggle }: TopBarProps) {
       className
     )}>
       <div className="flex h-16 items-center justify-between px-6">
-        {/* Left: Breadcrumb / Title */}
+        {/* Left: Multi-tenant Hospital Switcher & Title */}
         <div className="flex items-center gap-4">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">Hospital Management Portal</h2>
-            <p className="text-xs text-muted-foreground">
-              {profile?.full_name ? `Active Clinician: ${profile.full_name}` : "Clinical & Operations Control Desk"}
-            </p>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
+                <Building2 className="h-4 w-4 text-primary" />
+                <div className="text-left hidden sm:block">
+                  <span className="font-semibold text-xs leading-none text-foreground block">{currentHospital.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{currentHospital.location} • {currentHospital.tier}</span>
+                </div>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64">
+              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-semibold">
+                Switch Hospital Tenant (SaaS)
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {hospitals.map((h) => (
+                <DropdownMenuItem
+                  key={h.id}
+                  onClick={() => setHospital(h)}
+                  className={`cursor-pointer py-2 ${h.id === currentHospital.id ? "bg-accent font-semibold" : ""}`}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-xs">{h.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{h.location} • {h.code}</span>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Center: Search */}
-        <div className="flex-1 max-w-md mx-8 hidden sm:block">
+        <div className="flex-1 max-w-md mx-8 hidden lg:block">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Quick search patients, appointments, vitals..."
+              placeholder={`Search ${currentHospital.code} patients, vitals, doctors...`}
               className={cn(
                 "w-full pl-10 pr-4 py-2 bg-muted/50 border border-border rounded-lg text-sm",
                 "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",

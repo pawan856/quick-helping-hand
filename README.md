@@ -1,73 +1,72 @@
-# Welcome to your Lovable project
+# Hospital Management & AI Healthcare SaaS System
 
-## Project info
+Enterprise Multi-Tenant Healthcare Management Platform designed with modern architecture:
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite, shadcn/ui.
+- **AI Microservice**: Python FastAPI, Google Gemini LLM (`google-genai`), Multi-Tenant Context Engine.
+- **Core Hospital Backend**: ASP.NET Core (.NET 8) Web API with Multi-Tenant isolation middleware.
 
-**URL**: https://lovable.dev/projects/dc32af27-89c6-438c-83f3-097af07d75d2
+---
 
-## How can I edit this code?
+## 🏛️ System Architecture
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/dc32af27-89c6-438c-83f3-097af07d75d2) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+                               ┌────────────────────────────────────────────────┐
+                               │       Frontend (React + Vite + Tailwind)       │
+                               │  Hospital AI Copilot / Patients / Vitals UI   │
+                               └───────────────────────┬────────────────────────┘
+                                                       │
+                           ┌───────────────────────────┴───────────────────────────┐
+                           │                                                       │
+                           ▼                                                       ▼
+       ┌───────────────────────────────────────┐               ┌───────────────────────────────────────┐
+       │     .NET 8 Core Web API (C#)          │               │      Python FastAPI AI Service        │
+       │         `/backend-dotnet`             │               │            `/ai-service`              │
+       │  (Port 5000 / Multi-Tenant Core)      │               │  (Port 8000 / Gemini + DoctorCopilot) │
+       └───────────────────┬───────────────────┘               └───────────────────┬───────────────────┘
+                           │                                                       │
+                           │ ────── Multi-Tenant Data Layer (X-Hospital-Id) ────── │
+                           │                                                       │
+                           ▼                                                       ▼
+       ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
+       │                                  Hospital Multi-Tenant Store                                  │
+       │                   Isolated by Tenant ID (hosp-main-tenant-001, etc.)                          │
+       └───────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🚀 Quick Start Guide
 
-**Use GitHub Codespaces**
+### 1. Frontend Setup (Port 5173)
+```powershell
+cmd /c npm install
+cmd /c npm run dev
+```
+Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 2. .NET 8 Core Web API (Port 5000)
+```powershell
+cd backend-dotnet
+dotnet run --urls=http://localhost:5000
+```
+- Base API: `http://localhost:5000/api/v1/patients`
+- Multi-Tenant Header: `X-Hospital-Id: hosp-main-tenant-001`
 
-## What technologies are used for this project?
+### 3. Python AI Microservice (Port 8000)
+```powershell
+cd ai-service
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+- Interactive Swagger API Documentation: **[http://localhost:8000/api/v1/docs](http://localhost:8000/api/v1/docs)**
+- Agent Chat Route: `POST http://localhost:8000/api/v1/agent/chat`
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/dc32af27-89c6-438c-83f3-097af07d75d2) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🏢 Multi-Tenant SaaS Features
+- **Tenant Switcher**: TopBar dropdown allows switching between hospital branches (e.g. *Metro General Hospital*, *Apollo Specialty*, *Fortis Institute*).
+- **Tenant Isolation**: Every database record and AI prompt carries `hospital_id` to strictly isolate hospital data.
+- **AI Roles**:
+  - `DoctorAssistant`: Clinical reasoning and pharmacology checks.
+  - `PatientTriage`: Emergency acuity scoring and department recommendation.
+  - `BillingAuditor`: Medical ICD-10 diagnostic review.
