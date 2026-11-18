@@ -42,6 +42,13 @@ class DoctorCopilotAgent:
         )
     }
 
+    # Available models in order of priority
+    GEMINI_MODELS = [
+        "gemini-3.1-flash-lite",
+        "gemini-3.5-flash-lite",
+        "gemini-3.8-flash"
+    ]
+
     def __init__(self, hospital_id: str, role: str = "DoctorAssistant", doctor_id: Optional[str] = None):
         self.hospital_id = hospital_id
         self.role = role if role in self.ROLE_PROMPTS else "DoctorAssistant"
@@ -68,7 +75,7 @@ class DoctorCopilotAgent:
                     context["active_patients_sample"] = res.data
                     context["active_patients_count"] = len(res.data)
             except Exception as e:
-                print(f"[Supabase Context Fetch Notice] {e}")
+                pass
         return context
 
     def process_query(self, query: str) -> Dict[str, Any]:
@@ -77,35 +84,39 @@ class DoctorCopilotAgent:
 
         # Check if Gemini API Key is configured
         if settings.GEMINI_API_KEY and genai:
-            try:
-                client = genai.Client(api_key=settings.GEMINI_API_KEY)
-                prompt = (
-                    f"System Context:\n"
-                    f"Hospital ID: {self.hospital_id}\n"
-                    f"Role: {self.role}\n\n"
-                    f"Hospital Context: {json.dumps(hospital_ctx)}\n\n"
-                    f"User Query:\n{query}"
-                )
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                        temperature=0.2,
-                    ),
-                )
-                return {
-                    "success": True,
-                    "role": self.role,
-                    "hospital_id": self.hospital_id,
-                    "response": response.text,
-                    "source": "gemini-model"
-                }
-            except Exception as e:
-                print(f"[Gemini Call Error] {e}")
-                # Fallback to local clinical reasoning heuristic
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            prompt = (
+                f"System Context:\n"
+                f"Hospital ID: {self.hospital_id}\n"
+                f"Role: {self.role}\n\n"
+                f"Hospital Context: {json.dumps(hospital_ctx)}\n\n"
+                f"User Query:\n{query}"
+            )
 
-        # Simulated / Heuristic Clinical Output when API key is not yet set
+            # Try available live Gemini models with automatic fallback
+            for model_name in self.GEMINI_MODELS:
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            system_instruction=system_instruction,
+                            temperature=0.2,
+                        ),
+                    )
+                    if response and response.text:
+                        return {
+                            "success": True,
+                            "role": self.role,
+                            "hospital_id": self.hospital_id,
+                            "response": response.text,
+                            "source": f"gemini-live ({model_name})"
+                        }
+                except Exception as e:
+                    print(f"[{model_name} attempt error] {e}")
+                    continue
+
+        # Fallback to local clinical reasoning heuristic if API quota/network unavailable
         return self._generate_heuristic_response(query, hospital_ctx)
 
     def _generate_heuristic_response(self, query: str, context: Dict[str, Any]) -> Dict[str, Any]:
