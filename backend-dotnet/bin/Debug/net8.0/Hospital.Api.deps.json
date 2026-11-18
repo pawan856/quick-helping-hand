@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Hospital.Api/1.0.0": {
+        "runtime": {
+          "Hospital.Api.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Hospital.Api/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
